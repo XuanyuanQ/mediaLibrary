@@ -1,0 +1,5 @@
+[
+  { "id": 1, "title": "Valid item", "creator": "Someone", "type": "Movie" },
+  { "id": 2, "title": "", "creator": "Missing title", "type": "Music" },
+  { "title": "Missing id", "creator": "Nobody", "type": "Podcast" }
+]

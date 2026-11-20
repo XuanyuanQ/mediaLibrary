@@ -1,0 +1,6 @@
+[
+  {"id": 1, "title": "Echoes of Mars", "creator": "Dana Whitfield", "type": "Movie", "year": 2022, "duration": 7860, "description": "Test movie."},
+  {"id": 2, "title": "Blue Hour Sessions", "creator": "Aurora Quartet", "type": "Music", "year": 2016, "duration": 2950, "description": "Test album."},
+  {"id": 3, "title": "The Silent Archive", "creator": "Helena Marsh", "type": "Ebook", "year": 2019, "pages": 412, "description": "Test ebook."},
+  {"id": 4, "title": "Engines of Tomorrow", "creator": "Marcus Lee", "type": "Audiobook", "year": 2023, "duration": 29400, "description": "Test audiobook (Others)."}
+]

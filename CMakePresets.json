@@ -1,0 +1,36 @@
+{
+  "version": 6,
+  "configurePresets": [
+    {
+      "name": "mingw",
+      "displayName": "Qt 6.12 MinGW (Ninja)",
+      "description": "用 Qt 自带的 MinGW 编译器和 Ninja 构建。Qt 装在别的位置时，只需修改 QT_ROOT。",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/${presetName}",
+      "environment": {
+        "QT_ROOT": "C:/QtSS",
+        "PATH": "$env{QT_ROOT}/Tools/mingw1310_64/bin;$env{QT_ROOT}/6.12.0/mingw_64/bin;$env{QT_ROOT}/Tools/Ninja;$penv{PATH}"
+      },
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "CMAKE_PREFIX_PATH": "$env{QT_ROOT}/6.12.0/mingw_64",
+        "CMAKE_CXX_COMPILER": "$env{QT_ROOT}/Tools/mingw1310_64/bin/g++.exe",
+        "CMAKE_MAKE_PROGRAM": "$env{QT_ROOT}/Tools/Ninja/ninja.exe"
+      }
+    },
+    {
+      "name": "mingw-debug",
+      "displayName": "Qt 6.12 MinGW Debug",
+      "inherits": "mingw",
+      "cacheVariables": { "CMAKE_BUILD_TYPE": "Debug" }
+    }
+  ],
+  "buildPresets": [
+    { "name": "mingw", "configurePreset": "mingw" },
+    { "name": "mingw-debug", "configurePreset": "mingw-debug" }
+  ],
+  "testPresets": [
+    { "name": "mingw", "configurePreset": "mingw", "output": { "outputOnFailure": true } },
+    { "name": "mingw-debug", "configurePreset": "mingw-debug", "output": { "outputOnFailure": true } }
+  ]
+}

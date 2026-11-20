@@ -1,0 +1,499 @@
+# Media Library 架构设计（MVVM）
+
+> 适用范围：Qt 6 / QML 媒体库浏览器（新版）
+> 界面设计稿：[`../design/media_library_ui.html`](../design/media_library_ui.html)
+> 架构模式：**MVVM**（Model – ViewModel – View），C++ 负责 Model 和 ViewModel，QML 只做 View
+
+---
+
+## 1. 功能范围
+
+| 类别 | 功能 | 说明 |
+|---|---|---|
+| 题目必做 | 媒体列表 | 每行显示标题和创作者（另有类型图标、年份） |
+| 题目必做 | 搜索 | 按标题或创作者搜索，不区分大小写，支持多个关键字 |
+| 题目必做 | 详情 | 选中条目后显示完整信息 |
+| 题目必做 | 无结果提示 | 说明原因，并提供“清除搜索和筛选”按钮 |
+| 题目必做 | 技术要求 | 界面用 QML，数据模型用 C++ |
+| 加分项 | 类型筛选 | 下拉框：All / Movies / Music / Books / Podcasts / Others |
+| 加分项 | 语言切换 | 中英文**运行时**切换，不需要重启 |
+| 加分项 | 分辨率适配 | 宽屏（车机横屏、桌面）双栏；窄屏（手机竖屏）两级页面 |
+| 加分项 | 单元测试 | Qt Test 覆盖 Model 和 ViewModel |
+
+**刻意不做**：播放、收藏和文件夹、数据持久化、在线数据源。这些会写进 README 的“后续改进”部分。
+
+---
+
+## 2. 为什么选 MVVM
+
+QML 的**属性绑定**天然对应 MVVM：View 绑定 ViewModel 的属性，属性一变界面自动刷新；用户操作通过调用 ViewModel 的方法传回去。
+
+| 层 | 职责 | 依赖方向 |
+|---|---|---|
+| **View**（QML） | 只负责“怎么显示”：布局、样式、动画；把点击、输入转成对 ViewModel 的调用 | 依赖 ViewModel |
+| **ViewModel**（C++） | 界面状态和界面逻辑：搜索词、筛选、选中项、空状态、显示用的格式化文本 | 依赖 Model 和 Service，**不知道 QML 的存在** |
+| **Model**（C++） | 数据本身：从哪来、长什么样 | 不依赖任何上层 |
+| **Service**（C++） | 和界面无关的应用级能力：语言切换 | 不依赖上层 |
+
+**带来的好处**
+- 界面逻辑都在 C++ 里，**可以脱离界面写单元测试**。
+- 宽屏、窄屏两种布局**共用同一个 ViewModel**，切换布局时状态不会丢。
+- View 很“薄”，换界面风格只改 QML，逻辑不用动。
+
+---
+
+## 3. 分层总览
+
+```mermaid
+flowchart TB
+    subgraph V["View · QML（只显示，不保存业务状态）"]
+        Main["Main.qml<br/>按窗口宽度选择布局"]
+        Layouts["WideLayout / NarrowLayout"]
+        Comps["组件<br/>SearchField · TypeFilter · LanguageSwitch<br/>MediaList · MediaRow · DetailView · EmptyState"]
+        Theme["Theme 单例<br/>颜色 · 字体 · 缩放"]
+        Main --> Layouts --> Comps
+        Comps -. 使用 .-> Theme
+    end
+
+    subgraph VM["ViewModel · C++"]
+        LVM["LibraryViewModel<br/>搜索 · 筛选 · 选中 · 空状态 · 格式化"]
+        Filter["MediaFilterModel<br/>QSortFilterProxyModel"]
+        LVM -->|拥有| Filter
+    end
+
+    subgraph M["Model · C++"]
+        Library["MediaLibraryModel<br/>QAbstractListModel"]
+        Loader["MediaJsonLoader"]
+        Item["MediaItem"]
+        Library --> Item
+        Loader --> Item
+    end
+
+    subgraph S["Service · C++"]
+        Lang["LanguageManager<br/>QTranslator 切换"]
+    end
+
+    subgraph R["资源（编译进程序）"]
+        Json[("data/media.json")]
+        Qm[("i18n/*.qm")]
+    end
+
+    Comps -->|属性绑定 / 调用方法| LVM
+    Comps -->|setLanguage| Lang
+    Filter -->|sourceModel| Library
+    Loader --> Json
+    Lang --> Qm
+```
+
+**依赖规则**：箭头只能从上往下指。ViewModel 不引用任何 QML 类型；Model 不知道 ViewModel 的存在。
+
+---
+
+## 4. 对象由谁创建：在 `main.cpp` 里组装（依赖注入）
+
+所有 C++ 对象都在 `main.cpp` 里创建并连接好，再通过 `setInitialProperties` 交给 QML。**QML 不自己 new 任何业务对象。**
+
+```mermaid
+flowchart LR
+    A["MediaJsonLoader"] -->|"load(:/data/media.json)"| B["MediaLibraryModel"]
+    B -->|构造参数| C["LibraryViewModel"]
+    D["LanguageManager"] -->|"languageChanged 信号"| C
+    C -->|"setInitialProperties: libraryVm"| E["Main.qml"]
+    D -->|"setInitialProperties: language"| E
+```
+
+```cpp
+// main.cpp（示意）
+MediaLibraryModel library;
+library.setItems(MediaJsonLoader::load(":/data/media.json"));   // 加载数据
+
+LibraryViewModel libraryVm(&library);
+LanguageManager language(&engine);
+QObject::connect(&language, &LanguageManager::languageChanged,
+                 &libraryVm, &LibraryViewModel::retranslate);    // 语言变了，刷新格式化文本
+
+engine.setInitialProperties({{"libraryVm", QVariant::fromValue(&libraryVm)},
+                             {"language",  QVariant::fromValue(&language)}});
+engine.loadFromModule("MediaLibrary", "Main");
+```
+
+- `Main.qml` 用 `required property LibraryViewModel libraryVm` 接收，再一层层传给子组件。
+- **好处**：依赖关系一眼就能看清；测试时可以直接 `new LibraryViewModel(&假数据模型)`，不用启动 QML。
+- ViewModel 和 LanguageManager 之间不直接引用，由 `main.cpp` 用信号槽连起来，两边都保持独立。
+
+---
+
+## 5. C++ 模块
+
+### 5.1 类图
+
+```mermaid
+classDiagram
+    direction LR
+
+    class MediaItem {
+        <<struct>>
+        int id
+        QString title
+        QString creator
+        QString type
+        int year
+        int durationSec
+        int pages
+        QString description
+    }
+
+    class MediaJsonLoader {
+        <<Model>>
+        +load(path) LoadResult
+        -parseItem(obj) optional~MediaItem~
+    }
+
+    class MediaLibraryModel {
+        <<Model · QAbstractListModel>>
+        +count : int
+        +setItems(items)
+        +itemById(id) optional~MediaItem~
+        +rowCount()
+        +data(index, role)
+        +roleNames()
+    }
+
+    class MediaFilterModel {
+        <<ViewModel 内部 · QSortFilterProxyModel>>
+        +setSearchText(text)
+        +setCategory(key)
+        #filterAcceptsRow()
+        #lessThan()
+    }
+
+    class LibraryViewModel {
+        <<ViewModel · QML_ELEMENT>>
+        +items : QAbstractItemModel
+        +searchText : QString
+        +category : QString
+        +categories : QVariantList
+        +resultCount : int
+        +totalCount : int
+        +emptyState : EmptyState
+        +selectedId : int
+        +selectedItem : QVariantMap
+        +select(id)
+        +clearSelection()
+        +clearFilters()
+        +retranslate()
+        -QTimer searchDebounce
+    }
+
+    class LanguageManager {
+        <<Service · QML_ELEMENT>>
+        +language : QString
+        +availableLanguages : QVariantList
+        +setLanguage(code)
+        -QTranslator translator
+    }
+
+    MediaLibraryModel "1" o-- "*" MediaItem
+    MediaJsonLoader ..> MediaItem : 创建
+    LibraryViewModel *-- MediaFilterModel : 拥有
+    LibraryViewModel --> MediaLibraryModel : 读取
+    MediaFilterModel --> MediaLibraryModel : sourceModel
+```
+
+### 5.2 职责说明
+
+| 类 | 层 | 职责 | 关键点 |
+|---|---|---|---|
+| `MediaItem` | Model | 一条媒体记录 | 纯数据结构 |
+| `MediaJsonLoader` | Model | 读取并校验 JSON | 和模型分开：单独可测试，以后换数据源只改这里；坏记录跳过并记录警告 |
+| `MediaLibraryModel` | Model | 持有全部数据，以 roles 形式暴露 | 只读；`itemById()` 给 ViewModel 取详情 |
+| `MediaFilterModel` | ViewModel 内部 | 搜索 + 类型筛选 + 排序 | 由 `LibraryViewModel` 持有，View 只通过 `items` 属性拿到它 |
+| `LibraryViewModel` | ViewModel | 页面的全部状态和界面逻辑 | 见 5.3 |
+| `LanguageManager` | Service | 运行时切换语言 | 加载 `.qm` 后调用 `QQmlEngine::retranslate()`，并发出 `languageChanged` |
+
+### 5.3 `LibraryViewModel` 接口
+
+| 成员 | 类型 | 说明 |
+|---|---|---|
+| `items` | `QAbstractItemModel*`（只读） | 过滤后的列表，ListView 直接绑定 |
+| `searchText` | `QString`（读写） | 输入框内容立即更新；**200ms 防抖**后才真正过滤 |
+| `category` | `QString`（读写） | `""` = 全部；`"Others"` = 四个主要类型以外的 |
+| `categories` | `QVariantList`（只读） | 下拉框选项 `[{key, label}]`，`label` 已翻译，切换语言后自动更新 |
+| `resultCount` / `totalCount` | `int` | 用于“7 of 24 · Music”这样的计数 |
+| `emptyState` | 枚举 `None / NoData / NoMatch` | View 据此决定显示哪种提示 |
+| `selectedId` | `int` | 当前选中项（记 ID 不记行号） |
+| `selectedItem` | `QVariantMap` | 详情页直接绑定，包含**已格式化**的 `durationText`（“2 h 00 min” / “2 小时 00 分”）、`categoryLabel` 等 |
+| `select(id)` | 方法 | 选中某一项 |
+| `clearSelection()` | 方法 | 取消选中（窄屏返回列表时调用） |
+| `clearFilters()` | 方法 | 清空搜索词和类型，给“清除搜索和筛选”按钮用 |
+| `retranslate()` | 槽 | 语言切换后重新生成 `categories` 和 `selectedItem` 里的文字 |
+
+**界面规则（都在 ViewModel 里，可测试）**
+- 选中项被搜索过滤掉时：**保留选中**，详情继续显示，只是列表里没有高亮行。
+- `searchText` 和 `category` 同时为空时，`emptyState` 只可能是 `None` 或 `NoData`。
+- 时长、页数、类型名的显示文字统一在 ViewModel 里格式化，View 不拼字符串。
+
+### 5.4 Model roles（ListView 委托里的字段名）
+
+| Role | QML 名称 | 类型 |
+|---|---|---|
+| `IdRole` | `mediaId` | int（不用 `id`，因为它是 QML 保留字） |
+| `TitleRole` | `title` | string |
+| `CreatorRole` | `creator` | string |
+| `TypeRole` | `type` | string |
+| `YearRole` | `year` | int |
+
+列表行只需要这几个字段；完整信息走 `selectedItem`。
+
+---
+
+## 6. View（QML）
+
+### 6.1 组件树
+
+```mermaid
+flowchart TB
+    Main["Main.qml<br/>required libraryVm, language"]
+    Main --> Sw{"width ≥ 900 ?"}
+    Sw -- 是 --> Wide["WideLayout"]
+    Sw -- 否 --> Narrow["NarrowLayout · StackView"]
+
+    Wide --> LP1["LibraryPane"]
+    Wide --> DV1["DetailView"]
+    Narrow --> LPage["LibraryPage"] --> LP2["LibraryPane"]
+    Narrow --> DPage["DetailPage"] --> DV2["DetailView"]
+
+    LP1 & LP2 --> Header["HeaderBar · LanguageSwitch"]
+    LP1 & LP2 --> Search["SearchField"]
+    LP1 & LP2 --> TF["TypeFilter 下拉框"]
+    LP1 & LP2 --> List["MediaList · ListView"]
+    LP1 & LP2 --> Empty["EmptyState"]
+    List --> Row["MediaRow 委托"]
+    DV1 & DV2 --> Cover["CoverArt"]
+```
+
+`LibraryPane` 和 `DetailView` 在两种布局里**复用同一份组件**，并且绑定的是**同一个 `libraryVm`**。所以宽窄切换时，搜索词、筛选、选中项都保持不变。
+
+### 6.2 文件职责
+
+| 文件 | 职责 | 绑定 / 调用 |
+|---|---|---|
+| `Main.qml` | 窗口；按宽度切换布局；Android 返回键 | 接收 `libraryVm`、`language` |
+| `Theme.qml` | 单例：颜色、字体、间距、`scale` | — |
+| `layouts/WideLayout.qml` | 左列表、右详情 | — |
+| `layouts/NarrowLayout.qml` | StackView：选中后进入详情页，返回时 `clearSelection()` | `selectedId`、`clearSelection()` |
+| `components/LibraryPane.qml` | 标题栏、搜索、筛选、计数、列表、空状态 | `resultCount`、`totalCount`、`emptyState` |
+| `components/SearchField.qml` | 搜索框、清除按钮、Esc 清空 | `searchText` |
+| `components/TypeFilter.qml` | 带 ▾ 的下拉框，选中后高亮 | `categories`、`category` |
+| `components/LanguageSwitch.qml` | `EN \| 中` 分段按钮 | `language.language`、`setLanguage()` |
+| `components/MediaList.qml` / `MediaRow.qml` | 列表和每一行；搜索命中高亮 | `items`、`select()`、`selectedId` |
+| `components/DetailView.qml` | 详情内容 | `selectedItem` |
+| `components/EmptyState.qml` | 无数据 / 无结果提示 | `emptyState`、`clearFilters()` |
+| `components/CoverArt.qml` | 按类型生成封面占位 | — |
+
+### 6.3 状态归属
+
+| 状态 | 放在哪 | 原因 |
+|---|---|---|
+| 搜索词、类型、选中项、空状态 | `LibraryViewModel` | 业务状态：可测试，宽窄布局共享 |
+| 当前语言 | `LanguageManager` | 全局唯一 |
+| 窄屏 StackView 深度、下拉框是否展开、动画 | View 自己 | **纯视觉状态**，和业务无关，留在 QML 合理 |
+
+---
+
+## 7. 关键流程
+
+### 7.1 搜索（含防抖）
+
+```mermaid
+sequenceDiagram
+    actor U as 用户
+    participant SF as SearchField · View
+    participant VM as LibraryViewModel
+    participant F as MediaFilterModel
+    participant L as ListView · View
+    participant E as EmptyState · View
+
+    U->>SF: 输入 a、u、r
+    SF->>VM: searchText = "aur"（每次按键）
+    VM->>VM: 重启 200ms 防抖计时器
+    Note over VM: 停止输入 200ms 后
+    VM->>F: setSearchText("aur")
+    F->>F: 逐行 filterAcceptsRow()
+    F-->>L: rowsRemoved / rowsInserted
+    VM-->>E: resultCount = 2，emptyState = None
+```
+
+### 7.2 选中与详情
+
+```mermaid
+sequenceDiagram
+    actor U as 用户
+    participant R as MediaRow · View
+    participant VM as LibraryViewModel
+    participant LM as MediaLibraryModel
+    participant D as DetailView · View
+    participant N as NarrowLayout · View
+
+    U->>R: 点击
+    R->>VM: select(mediaId)
+    VM->>LM: itemById(mediaId)
+    VM->>VM: 格式化 durationText 等字段
+    VM-->>D: selectedItemChanged
+    alt 窄屏
+        VM-->>N: selectedIdChanged
+        N->>N: StackView.push(DetailPage)
+        U->>N: 返回键
+        N->>VM: clearSelection()
+        N->>N: StackView.pop()
+    else 宽屏
+        D->>D: 右侧直接刷新
+    end
+```
+
+### 7.3 语言切换
+
+```mermaid
+sequenceDiagram
+    actor U as 用户
+    participant SW as LanguageSwitch · View
+    participant LM as LanguageManager
+    participant QE as QQmlEngine
+    participant VM as LibraryViewModel
+    participant UI as 全部 View 文本
+
+    U->>SW: 点击 “中”
+    SW->>LM: setLanguage("zh_CN")
+    LM->>LM: 卸载旧翻译，加载 medialibrary_zh_CN.qm
+    LM->>QE: retranslate()
+    QE-->>UI: 所有 qsTr() 重新求值
+    LM-->>VM: languageChanged（main.cpp 中连接）
+    VM->>VM: retranslate()：重建 categories、selectedItem 的文字
+    VM-->>UI: categoriesChanged / selectedItemChanged
+```
+
+**翻译范围**：界面文字（View 里的 `qsTr()`）和 ViewModel 生成的显示文字（C++ 里的 `tr()`）都会翻译；标题、创作者、简介属于媒体数据，保持原文。
+
+---
+
+## 8. 分辨率适配
+
+| 窗口宽度 | 布局 | 典型设备 |
+|---|---|---|
+| `< 900` | 窄屏：列表 → 详情两级页面 | 手机竖屏、小窗口 |
+| `≥ 900` | 宽屏：左列表（约 42%）+ 右详情 | 车机横屏 1920×720、桌面、平板横屏 |
+
+`Theme.scale` 根据窗口尺寸计算，所有字号和间距都乘以它：
+
+```text
+scale = clamp( min(width / 基准宽, height / 基准高), 0.85, 1.6 )
+基准：宽屏 1280×720；窄屏 390×844
+```
+
+- 文字和间距统一写成 `Theme.sp(16)`、`Theme.dp(12)`，不直接写死像素值。
+- 可点击区域最小 `Theme.dp(48)`，方便车机上触控。
+- 布局切换是纯 View 的行为；因为状态在 ViewModel 里，切换时什么都不会丢。
+
+---
+
+## 9. 目录结构
+
+```text
+mediaLibrary/
+├── ARCHITECTURE.md / .html     本文档（.html 是可直接用浏览器打开的版本）
+├── README.md                   构建和运行说明、设计取舍、后续改进
+├── CMakeLists.txt
+├── CMakePresets.json
+├── build.bat
+├── data/
+│   └── media.json
+├── i18n/
+│   └── medialibrary_zh_CN.ts
+├── src/
+│   ├── main.cpp                组装对象（依赖注入）
+│   ├── model/
+│   │   ├── mediaitem.h
+│   │   ├── mediajsonloader.h/.cpp
+│   │   └── medialibrarymodel.h/.cpp
+│   ├── viewmodel/
+│   │   ├── mediafiltermodel.h/.cpp
+│   │   └── libraryviewmodel.h/.cpp
+│   └── services/
+│       └── languagemanager.h/.cpp
+├── qml/
+│   ├── Main.qml
+│   ├── Theme.qml
+│   ├── MediaUtils.js           只放纯显示工具：搜索命中高亮、HTML 转义
+│   ├── layouts/
+│   │   ├── WideLayout.qml
+│   │   └── NarrowLayout.qml
+│   └── components/
+│       ├── LibraryPane.qml
+│       ├── DetailView.qml
+│       ├── SearchField.qml
+│       ├── TypeFilter.qml
+│       ├── LanguageSwitch.qml
+│       ├── MediaList.qml
+│       ├── MediaRow.qml
+│       ├── EmptyState.qml
+│       └── CoverArt.qml
+└── tests/
+    ├── CMakeLists.txt
+    ├── tst_mediajsonloader.cpp
+    ├── tst_mediafiltermodel.cpp
+    └── tst_libraryviewmodel.cpp
+```
+
+---
+
+## 10. 构建结构
+
+```mermaid
+flowchart LR
+    subgraph lib["mediacore 静态库"]
+        M["model/"]
+        VMs["viewmodel/"]
+        S["services/"]
+    end
+    subgraph app["appMediaLibrary 可执行文件"]
+        QM["QML 模块 MediaLibrary<br/>qml/ + data/ + i18n/*.qm"]
+        MainCpp["main.cpp"]
+    end
+    subgraph test["tests"]
+        T["tst_*.cpp · Qt Test"]
+    end
+    app --> lib
+    test --> lib
+```
+
+- Model、ViewModel、Service 编成静态库 `mediacore`，主程序和测试都链接它，**测试不需要启动界面**。
+- `qt_add_qml_module` 把 QML、数据和翻译文件打包进程序。
+- `qt_add_translations` 自动运行 `lupdate` 和 `lrelease`，生成并打包 `.qm`。
+- Windows 下编译完成后用 `windeployqt` 复制运行库。
+- 运行测试：`ctest --test-dir build`。
+
+---
+
+## 11. 测试计划
+
+| 测试 | 覆盖点 |
+|---|---|
+| `tst_mediajsonloader` | 正常加载；文件不存在；JSON 格式错误；缺少标题或 ID 的记录被跳过 |
+| `tst_mediafiltermodel` | 空搜索返回全部；按标题、按创作者、不区分大小写；多关键字 AND；类型筛选；`Others` 分类；搜索 + 筛选组合 |
+| `tst_libraryviewmodel` | 防抖（连续输入只过滤一次）；`select` / `clearSelection`；选中项被过滤后仍保留；`emptyState` 三种情况；`clearFilters`；`resultCount`、`totalCount` 信号；`retranslate` 后 `categories` 和时长文字更新 |
+| 手动验证 | 宽窄切换时状态保留；中英文切换即时生效；1920×720 和 390×844 两种分辨率截图 |
+
+---
+
+## 12. 设计取舍（README 中也会写）
+
+| 决策 | 理由 |
+|---|---|
+| MVVM，ViewModel 用 C++ 写 | QML 绑定天然适合 MVVM；逻辑在 C++ 里可测试 |
+| `main.cpp` 组装对象并注入 QML | 依赖关系清晰；测试时可换成假数据 |
+| 一个 `LibraryViewModel` 服务两种布局 | 布局切换不丢状态；不重复写逻辑 |
+| 搜索防抖放在 ViewModel 里 | 是界面逻辑而不是界面样式；能用单元测试验证 |
+| 显示文字在 ViewModel 里格式化 | View 不拼字符串；中英文格式由同一处负责 |
+| 用 `QSortFilterProxyModel` 过滤 | 源数据不变，只刷新变化的行，性能好 |
+| 选中项记 ID 不记行号 | 搜索、排序后行号会变 |
+| 不做持久化和收藏 | 控制范围，专注题目要求 + 工程质量 |
