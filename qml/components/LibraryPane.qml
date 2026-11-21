@@ -1,4 +1,4 @@
-// 列表面板：标题栏 + 语言切换、搜索框 + 类型下拉、计数、列表、空状态。
+// 列表面板：标题栏 + 语言切换、搜索框 + 类型下拉、列表（末尾显示计数）、空状态。
 // 宽屏和窄屏布局复用同一份。
 import QtQuick
 import QtQuick.Controls
@@ -36,14 +36,6 @@ Item {
                 Layout.fillWidth: true
             }
             TypeFilter { }
-        }
-
-        // 计数
-        Placeholder {
-            Layout.fillWidth: true
-            name: "Count"
-            hint: "LibraryViewModel.resultCount / totalCount = "
-                  + LibraryViewModel.resultCount + " / " + LibraryViewModel.totalCount
         }
 
         // 列表 + 空状态（叠放）

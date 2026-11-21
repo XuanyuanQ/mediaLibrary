@@ -26,5 +26,21 @@ ListView {
         width: ListView.view.width
     }
 
+    // 列表末尾：显示“结果数 / 总数”，滚到最下面才能看到。
+    // footer 是 ListView 自带的属性：放在最后一行之后，跟着列表一起滚动。
+    // 没有结果时不显示（那时由 EmptyState 在列表中间显示计数）
+    footer: Label {
+        width: ListView.view.width
+        height: LibraryViewModel.resultCount > 0 ? implicitHeight : 0
+        visible: LibraryViewModel.resultCount > 0
+        topPadding: Theme.dp(12)
+        bottomPadding: Theme.dp(12)
+        horizontalAlignment: Text.AlignHCenter
+        // resultCount / totalCount 都是 C++ 的 Q_PROPERTY，搜索、筛选后自动更新
+        text: qsTr("%1 of %2 items").arg(LibraryViewModel.resultCount).arg(LibraryViewModel.totalCount)
+        color: Theme.textSecondary
+        font.pixelSize: Theme.sp(13)
+    }
+
     ScrollBar.vertical: ScrollBar { }
 }
