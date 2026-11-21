@@ -4,6 +4,8 @@
 #include <QTranslator>
 #include <QVariantList>
 
+#include "UiEvents.h"
+
 class QQmlEngine;
 
 /*
@@ -13,7 +15,8 @@ class QQmlEngine;
  *           QQmlEngine::retranslate()（所有 qsTr() 自动刷新）-> 发出 languageChanged
  *
  * 普通类。main.cpp 创建对象后用 qmlRegisterSingletonInstance 注册成 QML 单例，
- * QML 里 import MediaLibrary.Core 之后直接写 LanguageManager.xxx。
+ * QML 里 import MediaLibrary.Core 之后读取 LanguageManager.language 等属性（下发）；
+ * 切换语言用 UiEvents.post(UiEvents.LanguageSelected, code)（上发）。
  *
  * 它不知道 LibraryViewModel 的存在；ViewModel 里用 tr() 生成的文字，
  * 由 main.cpp 把 languageChanged 连接到 LibraryViewModel::retranslate() 来刷新。
@@ -36,7 +39,12 @@ public:
     QString getLanguage() const { return m_language; }
     QVariantList getAvailableLanguages() const;
 
-    Q_INVOKABLE void setLanguage(const QString &code);
+    // ---- 处理上发消息 ----
+    // 入口：main.cpp 把 UiEvents::post connect 到这里。只处理语言模块（200~299）的消息
+    void handleUiEvent(UiEvents::Type type, const QVariant &data);
+
+    // 由 handleUiEvent 分发（LanguageSelected）。不加 Q_INVOKABLE：QML 不能直接调用
+    void setLanguage(const QString &code);
 
 signals:
     void languageChanged();

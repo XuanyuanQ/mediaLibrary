@@ -1,4 +1,4 @@
-// 类型筛选下拉框（带 ▾）：选项来自 LibraryViewModel.categories，选中后写入 LibraryViewModel.category。
+// 类型筛选下拉框（带 ▾）：选项来自 LibraryViewModel.categories，选中后通过 UiEvents.post(TypeSelected) 上发。
 // 选了某个类型（不是 All types）时，边框和文字变成橙色，提示当前正在筛选
 import QtQuick
 import QtQuick.Controls
@@ -17,9 +17,9 @@ ComboBox {
     textRole: "label"
     valueRole: "key"
 
-    // 界面 → C++：用户选了某一项（onActivated 只响应用户操作，和搜索框的 onTextEdited 同理）。
-    // 赋值会调用 C++ 的 setCategory()（Q_PROPERTY 的 WRITE），C++ 里立即重新过滤
-    onActivated: LibraryViewModel.category = currentValue
+    // 上发（界面 → C++）：用户选了某一项（onActivated 只响应用户操作，和搜索框的 onTextEdited 同理）。
+    // 发一条 TypeSelected 消息，C++ 的 LibraryViewModel::handleUiEvent() 交给 setCategory()，立即重新过滤
+    onActivated: UiEvents.post(UiEvents.TypeSelected, currentValue)
 
     // 启动时：按 C++ 里当前的 category（默认 ""）选中对应的一项（All types）
     Component.onCompleted: currentIndex = indexOfValue(LibraryViewModel.category)

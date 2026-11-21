@@ -1,5 +1,7 @@
 #include "LibraryViewModel.h"
 
+#include <QDebug>
+
 #include "MediaFilterModel.h"
 #include "MediaLibraryModel.h"
 
@@ -47,8 +49,47 @@ QAbstractItemModel *LibraryViewModel::getItems() const
     return m_filter;
 }
 
+void LibraryViewModel::handleUiEvent(UiEvents::Type type, const QVariant &data)
+{
+    // 谁调用：QML 里 UiEvents.post(...) → main.cpp 的 connect → 这里。
+    // 所有模块都会收到每一条消息，不是媒体库模块的直接忽略
+    if (UiEvents::moduleOf(type) != UiEvents::Library)
+        return;
+
+    // data 是 QVariant，没有编译期类型检查，所以先检查类型，不对就打警告并丢弃
+    switch (type) {
+    case UiEvents::SearchEdited:
+    case UiEvents::TypeSelected:
+        if (data.typeId() != QMetaType::QString) {
+            qWarning() << "UiEvents:" << type << "expects a string, got" << data;
+            return;
+        }
+        if (type == UiEvents::SearchEdited)
+            setSearchText(data.toString());
+        else
+            setCategory(data.toString());
+        break;
+
+    case UiEvents::ItemClicked: {
+        bool ok = false;
+        const int id = data.toInt(&ok);   // QML 传来的数字可能是 int 也可能是 double，都能转
+        if (!ok) {
+            qWarning() << "UiEvents:" << type << "expects a media id, got" << data;
+            return;
+        }
+        select(id);
+        break;
+    }
+
+    default:
+        qWarning() << "UiEvents: unhandled library message" << type;
+        break;
+    }
+}
+
 void LibraryViewModel::setSearchText(const QString &text)
 {
+    // 谁调用：handleUiEvent() 收到 SearchEdited（来自 SearchField.qml）
     if (m_searchText == text)
         return;
     m_searchText = text;
@@ -58,6 +99,7 @@ void LibraryViewModel::setSearchText(const QString &text)
 
 void LibraryViewModel::setCategory(const QString &category)
 {
+    // 谁调用：handleUiEvent() 收到 TypeSelected（来自 TypeFilter.qml）
     if (m_category == category)
         return;
     m_category = category;
@@ -94,8 +136,7 @@ void LibraryViewModel::setSearchDebounceInterval(int ms)
 
 void LibraryViewModel::select(int mediaId)
 {
-    // 谁调用：MediaRow.qml 的 onClicked: LibraryViewModel.select(root.mediaId)
-    // （Q_INVOKABLE 让 QML 可以直接调用这个函数）
+    // 谁调用：handleUiEvent() 收到 ItemClicked（来自 MediaRow.qml 的点击）
     if (m_selectedId == mediaId)
         return;
     m_selectedId = mediaId;

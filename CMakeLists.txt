@@ -37,6 +37,7 @@ endif()
 # 交给 QML 的方式：main.cpp 里用 qmlRegisterSingletonInstance 把对象注册成单例
 # （模块名 MediaLibrary.Core），QML 里 import MediaLibrary.Core 之后直接写 LibraryViewModel.xxx。
 qt_add_library(mediacore STATIC
+    src/UiEvents.h                     # 上发接口（消息总线），各层共用
     src/model/MediaItem.h
     src/model/MediaJsonLoader.h        src/model/MediaJsonLoader.cpp
     src/model/MediaLibraryModel.h      src/model/MediaLibraryModel.cpp

@@ -26,7 +26,7 @@
 
 ## 2. 为什么选 MVVM
 
-QML 的**属性绑定**天然对应 MVVM：View 绑定 ViewModel 的属性，属性一变界面自动刷新；用户操作通过调用 ViewModel 的方法传回去。
+QML 的**属性绑定**天然对应 MVVM：View 绑定 ViewModel 的属性，属性一变界面自动刷新（下发）；用户操作统一通过 `UiEvents.post(类型, 数据)` 上发，按模块分发给各自的处理函数（上发），见第 4.1 节。
 
 | 层 | 职责 | 依赖方向 |
 |---|---|---|
@@ -55,7 +55,9 @@ flowchart TB
     end
 
     subgraph VM["ViewModel · C++"]
+        UE["UiEvents<br/>消息总线 post(类型, 数据)"]
         LVM["LibraryViewModel<br/>搜索 · 筛选 · 选中 · 空状态 · 格式化"]
+        UE -->|"100~199 媒体库消息"| LVM
         Filter["MediaFilterModel<br/>QSortFilterProxyModel"]
         LVM -->|拥有| Filter
     end
@@ -77,8 +79,9 @@ flowchart TB
         Qm[("i18n/*.qm")]
     end
 
-    Comps -->|属性绑定 / 调用方法| LVM
-    Comps -->|setLanguage| Lang
+    Comps -->|上发：发出事件| UE
+    LVM -.->|下发：属性绑定| Comps
+    UE -->|"200~299 语言消息"| Lang
     Filter -->|sourceModel| Library
     Loader --> Json
     Lang --> Qm
@@ -97,8 +100,11 @@ flowchart LR
     A["MediaJsonLoader"] -->|"load(:/data/media.json)"| B["MediaLibraryModel"]
     B -->|构造参数| C["LibraryViewModel"]
     D["LanguageManager"] -->|"languageChanged 信号"| C
+    U["UiEvents"] -->|"post → handleUiEvent"| C
+    U -->|"post → handleUiEvent"| D
     C -->|"注册为单例 LibraryViewModel"| E["任意 QML 文件"]
     D -->|"注册为单例 LanguageManager"| E
+    U -->|"注册为单例 UiEvents"| E
 ```
 
 ```cpp
@@ -111,8 +117,13 @@ LanguageManager language;
 QObject::connect(&language, &LanguageManager::languageChanged,
                  &libraryVm, &LibraryViewModel::retranslate);    // 语言变了，刷新格式化文本
 
+UiEvents uiEvents;                       // 上发：每个模块 connect 一次，各自只处理本模块的消息
+QObject::connect(&uiEvents, &UiEvents::post, &libraryVm, &LibraryViewModel::handleUiEvent);  // 100~199
+QObject::connect(&uiEvents, &UiEvents::post, &language,  &LanguageManager::handleUiEvent);   // 200~299
+
 qmlRegisterSingletonInstance("MediaLibrary.Core", 1, 0, "LibraryViewModel", &libraryVm);
 qmlRegisterSingletonInstance("MediaLibrary.Core", 1, 0, "LanguageManager", &language);
+qmlRegisterSingletonInstance("MediaLibrary.Core", 1, 0, "UiEvents", &uiEvents);
 
 QQmlApplicationEngine engine;     // 最后创建、最先销毁，保证 QML 销毁时 C++ 对象还在
 language.setEngine(&engine);
@@ -123,13 +134,41 @@ engine.loadFromModule("MediaLibrary", "Main");
 // 任意 QML 文件
 import MediaLibrary.Core
 
-TextField { text: LibraryViewModel.searchText }
-Button    { onClicked: LanguageManager.setLanguage("zh_CN") }
+TextField {
+    text: LibraryViewModel.searchText              // 下发：读属性
+    onTextEdited: UiEvents.post(UiEvents.SearchEdited, text)      // 上发：发消息
+}
+Button    { onClicked: UiEvents.post(UiEvents.LanguageSelected, "zh_CN") }
 ```
 
 - **单例写法**：`main.cpp` 创建对象后，用 `qmlRegisterSingletonInstance` 把它注册成单例。两个类本身是普通类，不带任何 QML 宏；对象仍归 C++ 所有，QML 引擎不会删除它，所以引擎要最后创建、最先销毁。这种注册发生在运行时，代价是 Qt Creator 的补全和 qmllint 认不出这两个单例，但不影响编译和运行。不使用已不推荐的 `setContextProperty`。
 - **为什么选单例而不是逐层传属性**：应用只有一个页面级 ViewModel，单例最简单，不需要每层组件都声明属性再往下传。以后如果同一个组件要服务多个实例（比如分屏显示两个媒体库），只需在那个组件上加一个属性参数。
 - ViewModel 和 LanguageManager 之间不直接引用，由 `main.cpp` 用信号槽连起来，两边都保持独立。
+
+### 4.1 上发和下发
+
+界面和 C++ 之间只有两个方向，各有一个统一的接口：
+
+| 方向 | 接口 | QML 写法 | 规则 |
+|---|---|---|---|
+| **上发**（QML → C++） | `UiEvents` 消息总线：一个信号 `post(类型, 数据)` | `UiEvents.post(UiEvents.ItemClicked, mediaId)` | QML 只报告“发生了什么”，不直接调用逻辑；消息按模块分段，各模块的 `handleUiEvent()` 只处理自己那一段 |
+| **下发**（C++ → QML） | `LibraryViewModel`、`LanguageManager` 的 `Q_PROPERTY` | `text: LibraryViewModel.searchText` | 只读；C++ 发出 NOTIFY 信号后，QML 绑定自动刷新 |
+
+上发消息表（定义在 `src/UiEvents.h` 的枚举里）：
+
+| 模块（编号段） | 消息 | data 类型 | 谁发出 | 处理 |
+|---|---|---|---|---|
+| 媒体库（100~199） | `SearchEdited` | `QString` | `SearchField`（输入、Esc、✕） | `LibraryViewModel::handleUiEvent` → `setSearchText` |
+| | `TypeSelected` | `QString`（类型 key） | `TypeFilter` | → `setCategory` |
+| | `ItemClicked` | `int`（媒体 ID） | `MediaRow` | → `select` |
+| 语言（200~299） | `LanguageSelected` | `QString`（语言代码） | `LanguageSwitch` | `LanguageManager::handleUiEvent` → `setLanguage` |
+
+- **按模块分发**：`main.cpp` 里每个模块 connect 一次，所有模块都收到每条消息，用 `UiEvents::moduleOf(类型)` 过滤掉不属于自己的。connect 的数量等于模块数，不等于消息数；加新消息只改枚举和对应模块的 `handleUiEvent()`，`main.cpp` 不用动。
+- **统一入口**：所有界面操作都经过 `post()` 这一个信号，以后加日志、转发到其他进程、录制回放，都只改这一个地方。
+- **类型检查**：数据用 `QVariant` 传，没有编译期检查，所以 `handleUiEvent()` 先检查类型，不对就打警告并丢弃，例如 `UiEvents::ItemClicked expects a media id, got QVariant(QString, "abc")`。
+- ViewModel 和 Service 的属性没有 `WRITE`，处理函数也不加 `Q_INVOKABLE`，所以 QML **只能**通过 `UiEvents` 上发，这条规则由 Qt 保证，不靠约定。
+- 纯视觉的交互（展开下拉框、悬停高亮、输入框获得焦点）不上发，留在 QML 里。
+- Qt 官方示例一般让 QML 直接调用 ViewModel；这里参考车机 HMI 常见的消息分发方式（类似 Kanzi 的 message type），让所有界面消息走统一入口、按模块分类，方便以后扩展到更多模块。
 
 ---
 
@@ -177,6 +216,13 @@ classDiagram
         #lessThan()
     }
 
+    class UiEvents {
+        <<上发消息总线 · QML 单例>>
+        +Type 枚举（按模块分段）
+        +post(type, data) signal
+        +moduleOf(type) Module
+    }
+
     class LibraryViewModel {
         <<ViewModel · QML 单例>>
         +items : QAbstractItemModel
@@ -188,7 +234,10 @@ classDiagram
         +emptyState : EmptyState
         +selectedId : int
         +selectedItem : QVariantMap
+        +setSearchText(text)
+        +setCategory(key)
         +select(id)
+        +handleUiEvent(type, data)
         +retranslate()
         -QTimer searchDebounce
     }
@@ -198,11 +247,14 @@ classDiagram
         +language : QString
         +availableLanguages : QVariantList
         +setLanguage(code)
+        +handleUiEvent(type, data)
         -QTranslator translator
     }
 
     MediaLibraryModel "1" o-- "*" MediaItem
     MediaJsonLoader ..> MediaItem : 创建
+    UiEvents ..> LibraryViewModel : post → handleUiEvent
+    UiEvents ..> LanguageManager : post → handleUiEvent
     LibraryViewModel *-- MediaFilterModel : 拥有
     LibraryViewModel --> MediaLibraryModel : 读取
     MediaFilterModel --> MediaLibraryModel : sourceModel
@@ -216,6 +268,7 @@ classDiagram
 | `MediaJsonLoader` | Model | 读取并校验 JSON | 和模型分开：单独可测试，以后换数据源只改这里；坏记录跳过并记录警告 |
 | `MediaLibraryModel` | Model | 持有全部数据，以 roles 形式暴露 | 只读；`itemById()` 给 ViewModel 取详情 |
 | `MediaFilterModel` | ViewModel 内部 | 搜索 + 类型筛选 + 排序 | 由 `LibraryViewModel` 持有，View 只通过 `items` 属性拿到它 |
+| `UiEvents` | 上发接口 | 消息总线：QML 发出的全部消息 | 一个 `post(类型, 数据)` 信号 + 按模块分段的类型枚举；没有实现代码 |
 | `LibraryViewModel` | ViewModel | 页面的全部状态和界面逻辑 | 见 5.3 |
 | `LanguageManager` | Service | 运行时切换语言 | 加载 `.qm` 后调用 `QQmlEngine::retranslate()`，并发出 `languageChanged` |
 
@@ -224,14 +277,17 @@ classDiagram
 | 成员 | 类型 | 说明 |
 |---|---|---|
 | `items` | `QAbstractItemModel*`（只读） | 过滤后的列表，ListView 直接绑定 |
-| `searchText` | `QString`（读写） | 输入框内容立即更新；**200ms 防抖**后才真正过滤 |
-| `category` | `QString`（读写） | `""` = 全部；`"Others"` = 四个主要类型以外的 |
+| `searchText` | `QString`（只读） | 输入框内容立即更新；**200ms 防抖**后才真正过滤 |
+| `category` | `QString`（只读） | `""` = 全部；`"Others"` = 四个主要类型以外的 |
 | `categories` | `QVariantList`（只读） | 下拉框选项 `[{key, label}]`，`label` 已翻译，切换语言后自动更新 |
 | `resultCount` / `totalCount` | `int` | 用于“7 of 24 · Music”这样的计数 |
 | `emptyState` | 枚举 `None / NoData / NoMatch` | View 据此决定显示哪种提示 |
 | `selectedId` | `int` | 当前选中项（记 ID 不记行号） |
 | `selectedItem` | `QVariantMap` | 详情页直接绑定，包含**已格式化**的 `durationText`（“2 h 00 min” / “2 小时 00 分”）、`categoryLabel` 等 |
-| `select(id)` | 方法 | 选中某一项 |
+| `handleUiEvent(type, data)` | 方法 | 上发入口：只处理媒体库模块（100~199）的消息，检查数据类型后分发给下面三个函数 |
+| `setSearchText(text)` | 方法 | 处理 `SearchEdited` |
+| `setCategory(key)` | 方法 | 处理 `TypeSelected` |
+| `select(id)` | 方法 | 处理 `ItemClicked`：选中某一项并生成详情 |
 | `retranslate()` | 槽 | 语言切换后重新生成 `categories` 和 `selectedItem` 里的文字 |
 
 **界面规则（都在 ViewModel 里，可测试）**
@@ -284,10 +340,10 @@ flowchart TB
 | `Theme.qml` | 单例：颜色、字体、间距、`scale` | — |
 | `layouts/WideLayout.qml` | 左列表、右详情 | — |
 | `components/LibraryPane.qml` | 标题栏、搜索、筛选、计数、列表、空状态 | `resultCount`、`totalCount`、`emptyState` |
-| `components/SearchField.qml` | 搜索框、清除按钮、Esc 清空 | `searchText` |
-| `components/TypeFilter.qml` | 带 ▾ 的下拉框，选中后高亮 | `categories`、`category` |
-| `components/LanguageSwitch.qml` | `EN \| 中` 分段按钮 | `language.language`、`setLanguage()` |
-| `components/MediaList.qml` / `MediaRow.qml` | 列表和每一行；搜索命中高亮 | `items`、`select()`、`selectedId` |
+| `components/SearchField.qml` | 搜索框、清除按钮、Esc 清空 | `searchText`；上发 `SearchEdited` |
+| `components/TypeFilter.qml` | 带 ▾ 的下拉框，选中后高亮 | `categories`、`category`；上发 `TypeSelected` |
+| `components/LanguageSwitch.qml` | `EN \| 中` 分段按钮 | `LanguageManager.language`；上发 `LanguageSelected` |
+| `components/MediaList.qml` / `MediaRow.qml` | 列表和每一行；搜索命中高亮 | `items`、`selectedId`；上发 `ItemClicked` |
 | `components/DetailView.qml` | 详情内容 | `selectedItem` |
 | `components/EmptyState.qml` | 无数据 / 无结果提示 | `emptyState` |
 | `components/CoverArt.qml` | 按类型生成封面占位 | — |
@@ -310,13 +366,15 @@ flowchart TB
 sequenceDiagram
     actor U as 用户
     participant SF as SearchField · View
+    participant UE as UiEvents
     participant VM as LibraryViewModel
     participant F as MediaFilterModel
     participant L as ListView · View
     participant E as EmptyState · View
 
     U->>SF: 输入 a、u、r
-    SF->>VM: searchText = "aur"（每次按键）
+    SF->>UE: post(SearchEdited, "aur")（每次按键）
+    UE->>VM: handleUiEvent → setSearchText("aur")
     VM->>VM: 重启 200ms 防抖计时器
     Note over VM: 停止输入 200ms 后
     VM->>F: setSearchText("aur")
@@ -331,12 +389,14 @@ sequenceDiagram
 sequenceDiagram
     actor U as 用户
     participant R as MediaRow · View
+    participant UE as UiEvents
     participant VM as LibraryViewModel
     participant LM as MediaLibraryModel
     participant D as DetailView · View
 
     U->>R: 点击
-    R->>VM: select(mediaId)
+    R->>UE: post(ItemClicked, mediaId)
+    UE->>VM: handleUiEvent → select(mediaId)
     VM->>LM: itemById(mediaId)
     VM->>VM: 格式化 durationText 等字段
     VM-->>D: selectedItemChanged
@@ -349,13 +409,15 @@ sequenceDiagram
 sequenceDiagram
     actor U as 用户
     participant SW as LanguageSwitch · View
+    participant UE as UiEvents
     participant LM as LanguageManager
     participant QE as QQmlEngine
     participant VM as LibraryViewModel
     participant UI as 全部 View 文本
 
     U->>SW: 点击 “中”
-    SW->>LM: setLanguage("zh_CN")
+    SW->>UE: post(LanguageSelected, "zh_CN")
+    UE->>LM: handleUiEvent → setLanguage("zh_CN")
     LM->>LM: 卸载旧翻译，加载 medialibrary_zh_CN.qm
     LM->>QE: retranslate()
     QE-->>UI: 所有 qsTr() 重新求值
@@ -399,6 +461,7 @@ mediaLibrary/
 │   └── medialibrary_zh_CN.ts
 ├── src/
 │   ├── main.cpp                创建并组装所有对象
+│   ├── UiEvents.h              上发消息总线（消息类型枚举 + post 信号），各层共用
 │   ├── model/
 │   │   ├── MediaItem.h
 │   │   ├── MediaJsonLoader.h/.cpp

@@ -1,8 +1,9 @@
 // 详情：类型、标题、创作者、年份 · 时长（或页数）、简介。
 // 只绑定 LibraryViewModel.selectedItem，显示文字都已在 C++（rebuildSelectedItem）里准备好。
 //
-// 数据流：点击列表某一行 → MediaRow 调用 LibraryViewModel.select(id)
-//        → C++ 生成 selectedItem 并发出 selectedItemChanged
+// 数据流：点击列表某一行 → MediaRow 上发 UiEvents.post(ItemClicked, id)
+//        → C++ 的 LibraryViewModel::handleUiEvent() → select(id)
+//        → C++ 生成 selectedItem 并发出 selectedItemChanged（下发）
 //        → 这里所有用到 selectedItem 的绑定重新读取 → 显示新内容
 import QtQuick
 import QtQuick.Controls

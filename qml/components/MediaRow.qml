@@ -75,7 +75,8 @@ ItemDelegate {
         }
     }
 
-    onClicked: LibraryViewModel.select(root.mediaId)
+    // 上发：点击后发一条 ItemClicked 消息，C++ 的 LibraryViewModel::handleUiEvent() 交给 select()
+    onClicked: UiEvents.post(UiEvents.ItemClicked, root.mediaId)
 
     Accessible.name: root.title + ", " + root.creator
 }
