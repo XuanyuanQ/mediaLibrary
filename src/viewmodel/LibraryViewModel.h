@@ -26,6 +26,13 @@ class LibraryViewModel : public QObject
 {
     Q_OBJECT
 
+    // Q_PROPERTY(类型 名字 READ 读函数 WRITE 写函数 NOTIFY 变化信号)：
+    //   - QML 读取 LibraryViewModel.名字 时，Qt 调用 READ 函数
+    //   - QML 赋值 LibraryViewModel.名字 = x 时，Qt 直接调用 WRITE 函数（不经过任何信号）
+    //   - WRITE 函数里值变了，要自己 emit NOTIFY 信号；QML 收到后，所有绑定了这个属性的地方自动刷新
+    //   - 这套对应关系由 moc 在编译时根据这里的声明生成代码，所以看不到显式的调用
+    //   - CONSTANT：属性永远不变，不需要 WRITE 和 NOTIFY
+
     // ---- 列表 ----
     // 过滤后的列表（内部是 MediaFilterModel），ListView 直接绑定
     Q_PROPERTY(QAbstractItemModel *items READ getItems CONSTANT)

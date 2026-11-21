@@ -11,7 +11,9 @@ ItemDelegate {
     // 这一行在列表中的位置（从 0 开始），由 ListView 自动赋值
     required property int index
 
-    // 这一行的数据：由 ListView 根据模型 roleNames() 自动赋值
+    // 这一行的数据：由 ListView 根据模型 roleNames() 自动赋值。
+    // 名字必须和 C++ roleNames() 里的一致（mediaId、title …），写错会在启动时报
+    // “Required property xxx was not initialized”
     required property int mediaId
     required property string title
     required property string creator
