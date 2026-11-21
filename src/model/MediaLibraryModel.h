@@ -13,7 +13,7 @@
  * 委托里可以直接写 title、creator 等字段名。
  *
  * 由 main.cpp 创建并填充数据。
- * 界面不直接使用它：ListView 绑定的是 LibraryViewModel::items（过滤后的代理模型）。
+ * 界面不直接使用它：ListView 绑定的是 LibraryManager::items（过滤后的代理模型）。
  */
 class MediaLibraryModel : public QAbstractListModel
 {

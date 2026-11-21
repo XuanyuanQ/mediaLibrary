@@ -1,4 +1,4 @@
-// 语言切换：EN | 中 | SV 分段按钮。
+// 语言切换：EN | SV 分段按钮。
 // 下发：选项来自 LanguageData.availableLanguages，当前语言 LanguageData.language 高亮（橙色）。
 // 上发：点击后 UiEvents.post(LanguageSelected, 语言代码)，C++ 的 LanguageManager 加载翻译并刷新界面。
 import QtQuick

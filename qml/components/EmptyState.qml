@@ -8,7 +8,7 @@ import MediaLibrary.Core
 Column {
     spacing: Theme.dp(6)
 
-    // emptyState 由 C++ 的 LibraryViewModel::publishCounts() 算好后下发：
+    // emptyState 由 C++ 的 LibraryManager::publishCounts() 算好后下发：
     //   NoMatch：有数据，但搜索 / 筛选后没有匹配项
     //   NoData： 媒体库本身是空的（或 media.json 加载失败）
     // 每次结果行数变化，C++ 都会发出 emptyStateChanged，这里的文字自动更新

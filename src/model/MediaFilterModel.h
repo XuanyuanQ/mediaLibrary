@@ -4,13 +4,13 @@
 #include <QStringList>
 
 /*
- * 【Model 层】过滤 + 排序代理模型。由 LibraryViewModel 持有，QML 通过 LibraryData.items 拿到它。
+ * 【Model 层】过滤 + 排序代理模型。由 LibraryManager 持有，QML 通过 LibraryData.items 拿到它。
  *
  * 包在 MediaLibraryModel 外面，本身不存数据，只决定：
  *   - 哪些行可见 -> filterAcceptsRow()
  *   - 行的顺序   -> lessThan()
  *
- * 由 LibraryViewModel 持有和控制，界面通过 LibraryViewModel::items 拿到它，
+ * 由 LibraryManager 持有和控制，界面通过 LibraryManager::items 拿到它，
  * 不直接设置它的属性。所以这里不需要注册成 QML 类型，也不需要 Q_PROPERTY。
  *
  * 继承自 QSortFilterProxyModel，以下函数没有重写，直接用 Qt 的现成实现：

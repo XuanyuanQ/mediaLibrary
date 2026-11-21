@@ -20,7 +20,7 @@ namespace UiData {
 Q_NAMESPACE   // 让 qDebug 能打印出名字（例如 UiData::ResultCount），方便看下发日志
 
 enum Key {
-    // ---- 媒体库（100~199）：LibraryViewModel 下发到 LibraryData ----
+    // ---- 媒体库（100~199）：LibraryManager 下发到 LibraryData ----
     SearchText = 100,   // QString       搜索框文字
     Category,           // QString       当前类型 key
     Categories,         // QVariantList  下拉框选项 [{key, label}]
@@ -31,7 +31,7 @@ enum Key {
     SelectedItem,       // QVariantMap   详情 {title, creator, typeLabel, metaText, description}
 
     // ---- 语言（200~299）：LanguageManager 下发到 LanguageData ----
-    Language = 200,     // QString       当前语言代码："en"、"zh_CN"、"sv"
+    Language = 200,     // QString       当前语言代码："en"、"sv"
     AvailableLanguages, // QVariantList  可选语言 [{code, label}]
 };
 Q_ENUM_NS(Key)

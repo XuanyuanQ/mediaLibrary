@@ -19,8 +19,8 @@ class QQmlEngine;
  *   上发：QML → UiEvents.post(LanguageSelected, code) → handleUiEvent() → setLanguage()
  *   下发：m_data.publish(UiData::Language, code) → LanguageData 发出 languageChanged → QML 绑定刷新
  *
- * 它不知道 LibraryViewModel 的存在；ViewModel 里用 tr() 生成的文字，
- * 由 main.cpp 把 languageChanged 连接到 LibraryViewModel::retranslate() 来刷新。
+ * 它不知道 LibraryManager 的存在；ViewModel 里用 tr() 生成的文字，
+ * 由 main.cpp 把 languageChanged 连接到 LibraryManager::retranslate() 来刷新。
  */
 class LanguageManager : public QObject
 {
@@ -43,7 +43,7 @@ public:
     void setLanguage(const QString &code);
 
 signals:
-    // 语言真正切换完成后发出（给其他 C++ 模块用，例如 main.cpp 连到 LibraryViewModel::retranslate）
+    // 语言真正切换完成后发出（给其他 C++ 模块用，例如 main.cpp 连到 LibraryManager::retranslate）
     void languageChanged();
 
 private:

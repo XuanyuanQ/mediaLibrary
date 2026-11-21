@@ -18,7 +18,7 @@ ComboBox {
     valueRole: "key"
 
     // 上发（界面 → C++）：用户选了某一项（onActivated 只响应用户操作，和搜索框的 onTextEdited 同理）。
-    // 发一条 TypeSelected 消息，C++ 的 LibraryViewModel::handleUiEvent() 交给 setCategory()，立即重新过滤
+    // 发一条 TypeSelected 消息，C++ 的 LibraryManager::handleUiEvent() 交给 setCategory()，立即重新过滤
     onActivated: UiEvents.post(UiEvents.TypeSelected, currentValue)
 
     // 按 C++ 里当前的 category 选中对应的一项

@@ -14,7 +14,6 @@ LanguageManager::LanguageManager(QObject *parent)
     m_data.publish(UiData::Language, QStringLiteral("en"));
     m_data.publish(UiData::AvailableLanguages, QVariantList{
         QVariantMap{{QStringLiteral("code"), QStringLiteral("en")}, {QStringLiteral("label"), QStringLiteral("EN")}},
-        QVariantMap{{QStringLiteral("code"), QStringLiteral("zh_CN")}, {QStringLiteral("label"), QStringLiteral("中")}},
         QVariantMap{{QStringLiteral("code"), QStringLiteral("sv")}, {QStringLiteral("label"), QStringLiteral("SV")}},
     });
 }
@@ -69,7 +68,7 @@ void LanguageManager::setLanguage(const QString &code)
 
     m_data.publish(UiData::Language, code);   // 下发：当前语言（LanguageSwitch 据此高亮）
 
-    // 4. 通知其他 C++ 模块：main.cpp 把它连到 LibraryViewModel::retranslate()，
+    // 4. 通知其他 C++ 模块：main.cpp 把它连到 LibraryManager::retranslate()，
     //    重新生成 C++ 里用 tr() 拼好的文字（下拉框选项、详情里的类型和时长）并下发
     emit languageChanged();
 }

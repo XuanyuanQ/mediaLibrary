@@ -1,6 +1,6 @@
 #include "MediaLibraryModel.h"
 
-// itemById()：按 ID 查完整记录，供 LibraryViewModel 生成详情
+// itemById()：按 ID 查完整记录，供 LibraryManager 生成详情
 
 MediaLibraryModel::MediaLibraryModel(QObject *parent)
     : QAbstractListModel(parent)

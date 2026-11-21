@@ -11,7 +11,7 @@ class MediaLibraryModel;
 class MediaFilterModel;
 
 /*
- * 【逻辑层 · ViewModel】媒体库页面的界面逻辑。不对 QML 开放（不注册到 QML）。
+ * 【逻辑层】媒体库页面的界面逻辑（在 MVVM 里相当于 ViewModel）。不对 QML 开放（不注册到 QML）。
  *
  * 数据流：
  *   上发：QML → UiEvents.post(类型, 数据) → main.cpp connect → handleUiEvent() → setSearchText / setCategory / select
@@ -20,12 +20,12 @@ class MediaFilterModel;
  * 所有“下发”都走统一入口 publish()，名字在 UiData.h 里集中登记；搜索 "publish(" 就能看到全部下发点。
  * 这个类不引用任何 QML 类型，不启动界面也能单独创建和使用。
  */
-class LibraryViewModel : public QObject
+class LibraryManager : public QObject
 {
     Q_OBJECT
 
 public:
-    explicit LibraryViewModel(MediaLibraryModel *library, QObject *parent = nullptr);
+    explicit LibraryManager(MediaLibraryModel *library, QObject *parent = nullptr);
 
     // 下发给 QML 的数据。main.cpp 把它注册成单例 LibraryData
     LibraryData *data() { return &m_data; }

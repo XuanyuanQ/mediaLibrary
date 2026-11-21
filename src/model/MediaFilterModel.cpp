@@ -33,7 +33,7 @@ void MediaFilterModel::setSearchText(const QString &text)
     //      → 发出 rowsRemoved；对要加回的行发出 rowsInserted
     //   3. 这些信号的接收者立即处理：
     //      - ListView：在 QML 里设置 model 时 Qt 自动 connect 的，收到后删除/创建对应的行
-    //      - LibraryViewModel：构造函数里手动 connect 的，收到后刷新结果计数
+    //      - LibraryManager：构造函数里手动 connect 的，收到后刷新结果计数
 #if QT_VERSION >= QT_VERSION_CHECK(6, 10, 0)
     endFilterChange(QSortFilterProxyModel::Direction::Rows);   // 只有“行”的过滤条件变了
 #else

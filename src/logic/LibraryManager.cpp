@@ -1,4 +1,4 @@
-#include "LibraryViewModel.h"
+#include "LibraryManager.h"
 
 #include <QDebug>
 
@@ -8,7 +8,7 @@
 // 已实现：搜索、类型筛选、计数、空状态、选中和详情。待实现：语言相关文字
 // 所有下发都走统一入口 m_data.publish(UiData::名字, 值)，搜索 "publish(" 可以看到全部下发点
 
-LibraryViewModel::LibraryViewModel(MediaLibraryModel *library, QObject *parent)
+LibraryManager::LibraryManager(MediaLibraryModel *library, QObject *parent)
     : QObject(parent)
     , m_library(library)
     , m_filter(new MediaFilterModel(this))
@@ -23,24 +23,24 @@ LibraryViewModel::LibraryViewModel(MediaLibraryModel *library, QObject *parent)
     // 防抖：每次输入都重新计时，停止输入 200ms 后才执行一次 applySearch()
     m_searchDebounce.setSingleShot(true);
     m_searchDebounce.setInterval(200);
-    connect(&m_searchDebounce, &QTimer::timeout, this, &LibraryViewModel::applySearch);
+    connect(&m_searchDebounce, &QTimer::timeout, this, &LibraryManager::applySearch);
 
     // 过滤结果的行数变化时（搜索后行被删除/加入、整体重置），重新下发计数和空状态。
     // 注意：这里的 connect 只用于计数文字。列表本身的增删不靠它——
     // ListView 在 QML 设置 model 时，Qt 已经自动 connect 了代理的这些信号，自己会更新
-    connect(m_filter, &QAbstractItemModel::rowsInserted, this, &LibraryViewModel::publishCounts);
-    connect(m_filter, &QAbstractItemModel::rowsRemoved, this, &LibraryViewModel::publishCounts);
-    connect(m_filter, &QAbstractItemModel::modelReset, this, &LibraryViewModel::publishCounts);
-    connect(m_filter, &QAbstractItemModel::layoutChanged, this, &LibraryViewModel::publishCounts);
+    connect(m_filter, &QAbstractItemModel::rowsInserted, this, &LibraryManager::publishCounts);
+    connect(m_filter, &QAbstractItemModel::rowsRemoved, this, &LibraryManager::publishCounts);
+    connect(m_filter, &QAbstractItemModel::modelReset, this, &LibraryManager::publishCounts);
+    connect(m_filter, &QAbstractItemModel::layoutChanged, this, &LibraryManager::publishCounts);
     // 媒体库总数变化时（重新加载数据），同样重新下发
-    connect(m_library, &MediaLibraryModel::countChanged, this, &LibraryViewModel::publishCounts);
+    connect(m_library, &MediaLibraryModel::countChanged, this, &LibraryManager::publishCounts);
 
     // 启动时下发一次初始数据
     publishCounts();
     publishCategories();
 }
 
-void LibraryViewModel::handleUiEvent(UiEvents::Type type, const QVariant &data)
+void LibraryManager::handleUiEvent(UiEvents::Type type, const QVariant &data)
 {
     // 谁调用：QML 里 UiEvents.post(...) → main.cpp 的 connect → 这里。
     // 所有模块都会收到每一条消息，不是媒体库模块的直接忽略
@@ -78,7 +78,7 @@ void LibraryViewModel::handleUiEvent(UiEvents::Type type, const QVariant &data)
     }
 }
 
-void LibraryViewModel::setSearchText(const QString &text)
+void LibraryManager::setSearchText(const QString &text)
 {
     // 谁调用：handleUiEvent() 收到 SearchEdited（来自 SearchField.qml）
     if (m_data.getSearchText() == text)
@@ -87,7 +87,7 @@ void LibraryViewModel::setSearchText(const QString &text)
     m_searchDebounce.start();     // 过滤要等停止输入 200ms 后再做（重新开始计时）
 }
 
-void LibraryViewModel::setCategory(const QString &category)
+void LibraryManager::setCategory(const QString &category)
 {
     // 谁调用：handleUiEvent() 收到 TypeSelected（来自 TypeFilter.qml）
     if (m_data.getCategory() == category)
@@ -98,7 +98,7 @@ void LibraryViewModel::setCategory(const QString &category)
     m_data.publish(UiData::Category, category);   // 下发：当前类型（下拉框据此变橙色）
 }
 
-void LibraryViewModel::publishCounts()
+void LibraryManager::publishCounts()
 {
     // 谁调用：过滤结果行数变化、媒体库重新加载、构造函数
     m_data.publish(UiData::ResultCount, m_filter->rowCount());                    // 下发：结果数
@@ -106,7 +106,7 @@ void LibraryViewModel::publishCounts()
     m_data.publish(UiData::EmptyState, QVariant::fromValue(computeEmptyState())); // 下发：空状态
 }
 
-LibraryData::EmptyState LibraryViewModel::computeEmptyState() const
+LibraryData::EmptyState LibraryManager::computeEmptyState() const
 {
     // 先判断库是不是空的：库空时结果数也是 0，但原因不是“没匹配到”
     if (!m_library || m_library->getCount() == 0)
@@ -117,7 +117,7 @@ LibraryData::EmptyState LibraryViewModel::computeEmptyState() const
     return LibraryData::None;
 }
 
-void LibraryViewModel::select(int mediaId)
+void LibraryManager::select(int mediaId)
 {
     // 谁调用：handleUiEvent() 收到 ItemClicked（来自 MediaRow.qml 的点击）
     if (m_data.getSelectedId() == mediaId)
@@ -126,20 +126,20 @@ void LibraryViewModel::select(int mediaId)
     publishSelectedItem();           // 下发：详情数据 → DetailView 刷新
 }
 
-void LibraryViewModel::retranslate()
+void LibraryManager::retranslate()
 {
     publishCategories();
     publishSelectedItem();
 }
 
-void LibraryViewModel::applySearch()
+void LibraryManager::applySearch()
 {
     // 防抖结束：把搜索词交给过滤模型。
     // 结果行数的变化会通过构造函数里连接的信号，触发 publishCounts() 下发计数
     m_filter->setSearchText(m_data.getSearchText());
 }
 
-void LibraryViewModel::publishCategories()
+void LibraryManager::publishCategories()
 {
     // 下拉框的选项：key 交给过滤模型（与数据里的 type 对应），label 显示在界面上。
     // label 用 tr() 包起来，以后做语言切换时可以翻译
@@ -156,7 +156,7 @@ void LibraryViewModel::publishCategories()
     });
 }
 
-void LibraryViewModel::publishSelectedItem()
+void LibraryManager::publishSelectedItem()
 {
     // 详情页要显示的内容全部在这里准备好（包括格式化后的文字），QML 只负责摆放
     QVariantMap detail;   // 没找到（未选中）时保持为空，DetailView 据此显示“请选择”提示

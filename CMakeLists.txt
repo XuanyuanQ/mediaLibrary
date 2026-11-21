@@ -19,14 +19,6 @@ if(QT_KNOWN_POLICY_QTP0004)
     qt_policy(SET QTP0004 NEW)
 endif()
 
-# 和旧项目一样：Visual Studio 编译器必须搭配 MSVC 版 Qt，提前给出明确提示
-if(MSVC AND EXISTS "${QT6_INSTALL_PREFIX}/lib/libQt6Core.a")
-    message(FATAL_ERROR
-        "当前使用 Visual Studio (MSVC) 编译，但 CMAKE_PREFIX_PATH 指向的是 MinGW 版 Qt：\n"
-        "  ${QT6_INSTALL_PREFIX}\n"
-        "请传入 -DCMAKE_PREFIX_PATH=<Qt目录>/6.x.x/msvc2022_64")
-endif()
-
 # =============================================================================
 # 1. mediacore：C++ 静态库（接口层 / 逻辑层 / Model），目录和 ARCHITECTURE.md 的分层图一一对应
 # =============================================================================
@@ -43,7 +35,7 @@ qt_add_library(mediacore STATIC
     src/interface/LanguageData.h       # 语言下发数据（QML 只读）
 
     # 逻辑层：QML 看不到；处理上发消息，计算后 publish 下发
-    src/logic/LibraryViewModel.h       src/logic/LibraryViewModel.cpp
+    src/logic/LibraryManager.h       src/logic/LibraryManager.cpp
     src/logic/LanguageManager.h        src/logic/LanguageManager.cpp
 
     # Model：数据本身
@@ -53,7 +45,7 @@ qt_add_library(mediacore STATIC
     src/model/MediaFilterModel.h       src/model/MediaFilterModel.cpp
 )
 
-# 头文件按层分目录，include 时直接写文件名即可（例如 #include "LibraryViewModel.h"）
+# 头文件按层分目录，include 时直接写文件名即可（例如 #include "LibraryManager.h"）
 target_include_directories(mediacore PUBLIC
     src
     src/interface
@@ -110,7 +102,6 @@ set_target_properties(appMediaLibrary PROPERTIES
 qt_add_translations(appMediaLibrary
     SOURCE_TARGETS appMediaLibrary mediacore
     TS_FILES
-        i18n/medialibrary_zh_CN.ts   # 简体中文
         i18n/medialibrary_sv.ts      # 瑞典语
     RESOURCE_PREFIX /i18n
 )
@@ -120,15 +111,11 @@ option(DEPLOY_QT_RUNTIME "Copy Qt runtime next to the executable after build (Wi
 if(WIN32 AND DEPLOY_QT_RUNTIME)
     find_program(WINDEPLOYQT_EXECUTABLE windeployqt HINTS "${QT6_INSTALL_PREFIX}/${QT6_INSTALL_BINS}")
     if(WINDEPLOYQT_EXECUTABLE)
-        set(_deploy_runtime_flag "")
-        if(MSVC)
-            set(_deploy_runtime_flag --no-compiler-runtime)
-        endif()
         add_custom_command(TARGET appMediaLibrary POST_BUILD
             COMMAND "${WINDEPLOYQT_EXECUTABLE}"
                     --qmldir "${CMAKE_CURRENT_SOURCE_DIR}/qml"
                     --no-translations
-                    ${_deploy_runtime_flag}
+                    --no-compiler-runtime   # VC 运行库不复制（装了 Visual Studio 的机器上已有）
                     --verbose 0
                     "$<TARGET_FILE:appMediaLibrary>"
             COMMENT "Deploying Qt runtime next to appMediaLibrary.exe")

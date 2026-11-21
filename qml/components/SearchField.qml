@@ -13,7 +13,7 @@ TextField {
     // QML 自动重新取值，搜索框文字随之更新（✕ 按钮清空就是靠这一行）
     text: LibraryData.searchText
     // 上发（界面 → C++）：用户每打一个字，就发一条 SearchEdited 消息。
-    // C++ 的 LibraryViewModel::handleUiEvent() 收到后交给 setSearchText()，
+    // C++ 的 LibraryManager::handleUiEvent() 收到后交给 setSearchText()，
     // 之后的流程都在 C++：200ms 防抖 → 代理重新过滤 → 发出 rowsRemoved 等信号 → 列表更新。
     // 用 onTextEdited 而不是 onTextChanged：只响应用户输入，避免和上面的绑定互相触发
     onTextEdited: UiEvents.post(UiEvents.SearchEdited, text)

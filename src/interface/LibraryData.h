@@ -9,7 +9,7 @@
 /*
  * 【下发接口 · 数据类】媒体库页面要显示的全部数据。QML 只读这里，不读任何逻辑类。
  *
- *   C++ 逻辑（LibraryViewModel）算完结果 → m_data.publish(UiData::Xxx, 值)
+ *   C++ 逻辑（LibraryManager）算完结果 → m_data.publish(UiData::Xxx, 值)
  *   → 对应属性的 setter → 值变了发出 xxxChanged → QML 绑定自动刷新
  *
  * 只有数据，没有任何逻辑。属性名必须先在 UiData.h 里登记。
@@ -58,5 +58,5 @@ public:
     UI_PROPERTY(QVariantMap, selectedItem, SelectedItem)
 
 private:
-    QAbstractItemModel *m_items = nullptr;   // 不拥有，属于 LibraryViewModel
+    QAbstractItemModel *m_items = nullptr;   // 不拥有，属于 LibraryManager
 };

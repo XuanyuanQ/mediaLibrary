@@ -36,7 +36,7 @@ ListView {
         topPadding: Theme.dp(12)
         bottomPadding: Theme.dp(12)
         horizontalAlignment: Text.AlignHCenter
-        // resultCount / totalCount 由 C++ 的 LibraryViewModel::publishCounts() 下发，搜索、筛选后自动更新
+        // resultCount / totalCount 由 C++ 的 LibraryManager::publishCounts() 下发，搜索、筛选后自动更新
         text: qsTr("%1 of %2 items").arg(LibraryData.resultCount).arg(LibraryData.totalCount)
         color: Theme.textSecondary
         font.pixelSize: Theme.sp(13)
