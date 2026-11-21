@@ -1,4 +1,4 @@
-#include "medialibrarymodel.h"
+#include "MediaLibraryModel.h"
 
 // 骨架阶段：模型的基础结构已就绪，data()/setItems()/itemById() 待实现
 

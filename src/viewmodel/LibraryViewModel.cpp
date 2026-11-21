@@ -1,7 +1,7 @@
-#include "libraryviewmodel.h"
+#include "LibraryViewModel.h"
 
-#include "mediafiltermodel.h"
-#include "medialibrarymodel.h"
+#include "MediaFilterModel.h"
+#include "MediaLibraryModel.h"
 
 // 骨架阶段：对象之间的连接关系已搭好，界面逻辑待实现
 
@@ -23,7 +23,7 @@ LibraryViewModel::LibraryViewModel(MediaLibraryModel *library, QObject *parent)
     rebuildCategories();
 }
 
-QAbstractItemModel *LibraryViewModel::items() const
+QAbstractItemModel *LibraryViewModel::getItems() const
 {
     return m_filter;
 }
@@ -46,19 +46,19 @@ void LibraryViewModel::setCategory(const QString &category)
     emit categoryChanged();
 }
 
-int LibraryViewModel::resultCount() const
+int LibraryViewModel::getResultCount() const
 {
     return m_filter->rowCount();
 }
 
-int LibraryViewModel::totalCount() const
+int LibraryViewModel::getTotalCount() const
 {
-    return m_library ? m_library->count() : 0;
+    return m_library ? m_library->getCount() : 0;
 }
 
-LibraryViewModel::EmptyState LibraryViewModel::emptyState() const
+LibraryViewModel::EmptyState LibraryViewModel::getEmptyState() const
 {
-    // TODO: totalCount()==0 -> NoData；resultCount()==0 -> NoMatch；否则 None
+    // TODO: getTotalCount()==0 -> NoData；getResultCount()==0 -> NoMatch；否则 None
     return None;
 }
 

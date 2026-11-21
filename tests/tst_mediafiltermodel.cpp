@@ -2,8 +2,8 @@
 // 骨架阶段：测试用例已列出，实现完成后逐个去掉 QSKIP 并补充断言
 #include <QtTest>
 
-#include "mediafiltermodel.h"
-#include "medialibrarymodel.h"
+#include "MediaFilterModel.h"
+#include "MediaLibraryModel.h"
 
 class TestMediaFilterModel : public QObject
 {

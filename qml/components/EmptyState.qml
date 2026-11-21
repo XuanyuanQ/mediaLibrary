@@ -7,10 +7,8 @@ import MediaLibrary.Core
 Placeholder {
     id: root
 
-    required property LibraryViewModel libraryVm
-
     name: "EmptyState"
-    hint: "libraryVm.emptyState → clearFilters()"
+    hint: "LibraryViewModel.emptyState → clearFilters()"
 
     // TODO: 按 emptyState 显示不同文案；NoMatch 时提供“清除搜索和筛选”按钮
 }

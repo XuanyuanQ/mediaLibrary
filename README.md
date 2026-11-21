@@ -45,7 +45,7 @@ cmake --build build --config Release -j 8
 | `src/model/` | Model：`MediaItem`、`MediaJsonLoader`、`MediaLibraryModel` |
 | `src/viewmodel/` | ViewModel：`LibraryViewModel`、`MediaFilterModel` |
 | `src/services/` | Service：`LanguageManager` |
-| `src/main.cpp` | 创建并组装所有对象，注入 QML |
+| `src/main.cpp` | 创建并组装所有对象，交给 QML 单例（`LibraryViewModel`、`LanguageManager`） |
 | `qml/` | View：`Main.qml`、`Theme.qml`、`layouts/`、`components/` |
 | `data/` | mock 数据 |
 | `i18n/` | 翻译源文件（`.ts`） |

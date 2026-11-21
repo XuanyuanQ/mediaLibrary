@@ -7,7 +7,7 @@
 #include <QStringList>
 #include <optional>
 
-#include "mediaitem.h"
+#include "MediaItem.h"
 
 // 加载结果：成功时 error 为空；单条坏记录不会导致整体失败，只记录到 warnings
 struct LoadResult

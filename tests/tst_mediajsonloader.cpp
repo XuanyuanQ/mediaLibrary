@@ -2,7 +2,7 @@
 // 骨架阶段：测试用例已列出，实现完成后逐个去掉 QSKIP 并补充断言
 #include <QtTest>
 
-#include "mediajsonloader.h"
+#include "MediaJsonLoader.h"
 
 class TestMediaJsonLoader : public QObject
 {

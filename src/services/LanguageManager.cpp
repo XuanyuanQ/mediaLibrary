@@ -1,16 +1,15 @@
-#include "languagemanager.h"
+#include "LanguageManager.h"
 
 #include <QQmlEngine>
 
 // 骨架阶段：接口已定义，翻译加载待实现
 
-LanguageManager::LanguageManager(QQmlEngine *engine, QObject *parent)
+LanguageManager::LanguageManager(QObject *parent)
     : QObject(parent)
-    , m_engine(engine)
 {
 }
 
-QVariantList LanguageManager::availableLanguages() const
+QVariantList LanguageManager::getAvailableLanguages() const
 {
     // 语言名称本身不翻译：用户在任何语言下都应该能认出自己的语言
     return {

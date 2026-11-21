@@ -2,8 +2,8 @@
 // 骨架阶段：测试用例已列出，实现完成后逐个去掉 QSKIP 并补充断言
 #include <QtTest>
 
-#include "libraryviewmodel.h"
-#include "medialibrarymodel.h"
+#include "LibraryViewModel.h"
+#include "MediaLibraryModel.h"
 
 class TestLibraryViewModel : public QObject
 {
@@ -15,8 +15,8 @@ private slots:
     {
         MediaLibraryModel library;
         LibraryViewModel vm(&library);
-        QVERIFY(vm.items() != nullptr);
-        QCOMPARE(vm.selectedId(), -1);
+        QVERIFY(vm.getItems() != nullptr);
+        QCOMPARE(vm.getSelectedId(), -1);
     }
 
     void debounceAppliesSearchOnce()          { QSKIP("Not implemented yet"); }

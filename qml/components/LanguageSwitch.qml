@@ -7,10 +7,8 @@ import MediaLibrary.Core
 Placeholder {
     id: root
 
-    required property LanguageManager language
-
     name: "LanguageSwitch"
-    hint: "language.setLanguage() · 当前 " + root.language.language
+    hint: "LanguageManager.setLanguage() · 当前 " + LanguageManager.language
 
-    // TODO: 换成分段按钮：Repeater over language.availableLanguages
+    // TODO: 换成分段按钮：Repeater over LanguageManager.availableLanguages
 }

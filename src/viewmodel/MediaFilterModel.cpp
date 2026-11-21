@@ -1,4 +1,4 @@
-#include "mediafiltermodel.h"
+#include "MediaFilterModel.h"
 
 // 骨架阶段：接口已定义，过滤和排序规则待实现
 

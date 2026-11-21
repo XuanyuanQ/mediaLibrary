@@ -1,16 +1,12 @@
-// 主窗口：接收 main.cpp 注入的对象，按窗口宽度选择布局。
-// 这里不保存任何业务状态（搜索、筛选、选中都在 libraryVm 里）。
+// 主窗口：按窗口宽度选择布局。
+// 不保存任何业务状态（搜索、筛选、选中都在 LibraryViewModel 单例里），
+// 所以宽窄布局切换时状态不会丢。
 import QtQuick
 import QtQuick.Controls
 import MediaLibrary
-import MediaLibrary.Core
 
 ApplicationWindow {
     id: window
-
-    // 由 main.cpp 通过 setInitialProperties 注入
-    required property LibraryViewModel libraryVm
-    required property LanguageManager language
 
     readonly property bool wide: width >= Theme.wideBreakpoint
 
@@ -30,7 +26,6 @@ ApplicationWindow {
         value: 1.0
     }
 
-    // 宽窄布局都绑定同一个 libraryVm，切换时状态不会丢
     Loader {
         anchors.fill: parent
         sourceComponent: window.wide ? wideLayout : narrowLayout
@@ -38,17 +33,11 @@ ApplicationWindow {
 
     Component {
         id: wideLayout
-        WideLayout {
-            libraryVm: window.libraryVm
-            language: window.language
-        }
+        WideLayout { }
     }
 
     Component {
         id: narrowLayout
-        NarrowLayout {
-            libraryVm: window.libraryVm
-            language: window.language
-        }
+        NarrowLayout { }
     }
 }

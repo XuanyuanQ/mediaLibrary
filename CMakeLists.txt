@@ -2,7 +2,7 @@
 # 架构说明见 ARCHITECTURE.md
 #
 # 构建产物：
-#   mediacore        静态库：Model + ViewModel + Service（C++ 逻辑），同时是 QML 模块 MediaLibrary.Core
+#   mediacore        静态库：Model + ViewModel + Service（C++ 逻辑）
 #   appMediaLibrary  可执行文件：main.cpp + QML 界面（QML 模块 MediaLibrary）
 #   tests/           单元测试，只链接 mediacore，不启动界面
 cmake_minimum_required(VERSION 3.21)
@@ -33,27 +33,19 @@ endif()
 # =============================================================================
 # 1. mediacore：C++ 逻辑静态库（Model / ViewModel / Service）
 # =============================================================================
-# 做成 QML 模块 "MediaLibrary.Core"，这样 QML 可以写
-#   required property LibraryViewModel libraryVm
-# 这种带类型的声明，也能访问 C++ 枚举（LibraryViewModel.NoMatch）。
-# 对象本身都在 main.cpp 里创建，QML 不能自己创建它们（QML_UNCREATABLE）。
-qt_add_library(mediacore STATIC)
-
-qt_add_qml_module(mediacore
-    URI MediaLibrary.Core
-    VERSION 1.0
-    # QML 模块的输出目录要和 URI 对应（MediaLibrary.Core -> MediaLibrary/Core），qmllint 等工具才能找到
-    OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/MediaLibrary/Core
-    SOURCES
-        src/model/mediaitem.h
-        src/model/mediajsonloader.h        src/model/mediajsonloader.cpp
-        src/model/medialibrarymodel.h      src/model/medialibrarymodel.cpp
-        src/viewmodel/mediafiltermodel.h   src/viewmodel/mediafiltermodel.cpp
-        src/viewmodel/libraryviewmodel.h   src/viewmodel/libraryviewmodel.cpp
-        src/services/languagemanager.h     src/services/languagemanager.cpp
+# 普通静态库，主程序和测试都链接它。
+# 交给 QML 的方式：main.cpp 里用 qmlRegisterSingletonInstance 把对象注册成单例
+# （模块名 MediaLibrary.Core），QML 里 import MediaLibrary.Core 之后直接写 LibraryViewModel.xxx。
+qt_add_library(mediacore STATIC
+    src/model/MediaItem.h
+    src/model/MediaJsonLoader.h        src/model/MediaJsonLoader.cpp
+    src/model/MediaLibraryModel.h      src/model/MediaLibraryModel.cpp
+    src/viewmodel/MediaFilterModel.h   src/viewmodel/MediaFilterModel.cpp
+    src/viewmodel/LibraryViewModel.h   src/viewmodel/LibraryViewModel.cpp
+    src/services/LanguageManager.h     src/services/LanguageManager.cpp
 )
 
-# 头文件按层分目录；生成的 QML 类型注册代码按文件名包含头文件，所以每层目录都要加进来
+# 头文件按层分目录，include 时直接写文件名即可（例如 #include "LibraryViewModel.h"）
 target_include_directories(mediacore PUBLIC
     src
     src/model
@@ -94,10 +86,8 @@ qt_add_qml_module(appMediaLibrary
         data/media.json
 )
 
-# mediacoreplugin：mediacore 的 QML 插件（静态），main.cpp 里用 Q_IMPORT_QML_PLUGIN 导入
 target_link_libraries(appMediaLibrary PRIVATE
     mediacore
-    mediacoreplugin
     Qt6::Gui
     Qt6::Quick
     Qt6::QuickControls2

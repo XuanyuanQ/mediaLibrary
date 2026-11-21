@@ -9,9 +9,6 @@ import MediaLibrary.Core
 Item {
     id: root
 
-    required property LibraryViewModel libraryVm
-    required property LanguageManager language
-
     ColumnLayout {
         anchors.fill: parent
         anchors.margins: Theme.dp(16)
@@ -26,10 +23,9 @@ Item {
                 color: Theme.textPrimary
                 font.pixelSize: Theme.sp(28)
                 font.bold: true
+                elide: Text.ElideRight
             }
-            LanguageSwitch {
-                language: root.language
-            }
+            LanguageSwitch { }
         }
 
         // 搜索 + 筛选
@@ -38,19 +34,16 @@ Item {
             spacing: Theme.dp(8)
             SearchField {
                 Layout.fillWidth: true
-                libraryVm: root.libraryVm
             }
-            TypeFilter {
-                libraryVm: root.libraryVm
-            }
+            TypeFilter { }
         }
 
         // 计数
         Placeholder {
             Layout.fillWidth: true
             name: "Count"
-            hint: "libraryVm.resultCount / totalCount = "
-                  + root.libraryVm.resultCount + " / " + root.libraryVm.totalCount
+            hint: "LibraryViewModel.resultCount / totalCount = "
+                  + LibraryViewModel.resultCount + " / " + LibraryViewModel.totalCount
         }
 
         // 列表 + 空状态（叠放）
@@ -60,12 +53,10 @@ Item {
 
             MediaList {
                 anchors.fill: parent
-                libraryVm: root.libraryVm
             }
             EmptyState {
                 anchors.centerIn: parent
-                libraryVm: root.libraryVm
-                visible: root.libraryVm.emptyState !== LibraryViewModel.None
+                visible: LibraryViewModel.emptyState !== LibraryViewModel.None
             }
         }
     }

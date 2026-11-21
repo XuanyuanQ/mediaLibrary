@@ -5,7 +5,6 @@
 #include <QTimer>
 #include <QVariantList>
 #include <QVariantMap>
-#include <QtQml/qqmlregistration.h>
 
 class MediaLibraryModel;
 class MediaFilterModel;
@@ -20,36 +19,35 @@ class MediaFilterModel;
  * 这个类不引用任何 QML 类型，可以直接在单元测试里 new 出来测试。
  * 宽屏、窄屏两种布局共用同一个实例，所以切换布局时状态不会丢。
  *
- * 由 main.cpp 创建并通过 setInitialProperties 注入 QML（QML 不能自己创建）。
+ * 普通类。main.cpp 创建对象后用 qmlRegisterSingletonInstance 注册成 QML 单例，
+ * QML 里 import MediaLibrary.Core 之后直接写 LibraryViewModel.xxx。
  */
 class LibraryViewModel : public QObject
 {
     Q_OBJECT
-    QML_ELEMENT
-    QML_UNCREATABLE("LibraryViewModel is created in C++ (main.cpp) and injected")
 
     // ---- 列表 ----
     // 过滤后的列表（内部是 MediaFilterModel），ListView 直接绑定
-    Q_PROPERTY(QAbstractItemModel *items READ items CONSTANT)
+    Q_PROPERTY(QAbstractItemModel *items READ getItems CONSTANT)
 
     // ---- 搜索 / 筛选 ----
     // 输入框内容立即更新；停止输入 200ms 后才真正过滤（防抖）
-    Q_PROPERTY(QString searchText READ searchText WRITE setSearchText NOTIFY searchTextChanged)
+    Q_PROPERTY(QString searchText READ getSearchText WRITE setSearchText NOTIFY searchTextChanged)
     // ""=全部；"Others"=四个主要类型以外的
-    Q_PROPERTY(QString category READ category WRITE setCategory NOTIFY categoryChanged)
+    Q_PROPERTY(QString category READ getCategory WRITE setCategory NOTIFY categoryChanged)
     // 下拉框选项 [{key, label}]，label 已翻译，切换语言后自动更新
-    Q_PROPERTY(QVariantList categories READ categories NOTIFY categoriesChanged)
+    Q_PROPERTY(QVariantList categories READ getCategories NOTIFY categoriesChanged)
 
     // ---- 计数 / 空状态 ----
-    Q_PROPERTY(int resultCount READ resultCount NOTIFY resultCountChanged)
-    Q_PROPERTY(int totalCount READ totalCount NOTIFY totalCountChanged)
-    Q_PROPERTY(EmptyState emptyState READ emptyState NOTIFY emptyStateChanged)
+    Q_PROPERTY(int resultCount READ getResultCount NOTIFY resultCountChanged)
+    Q_PROPERTY(int totalCount READ getTotalCount NOTIFY totalCountChanged)
+    Q_PROPERTY(EmptyState emptyState READ getEmptyState NOTIFY emptyStateChanged)
 
     // ---- 选中 / 详情 ----
     // 记 ID 不记行号：搜索、排序后行号会变，ID 不变
-    Q_PROPERTY(int selectedId READ selectedId NOTIFY selectedIdChanged)
+    Q_PROPERTY(int selectedId READ getSelectedId NOTIFY selectedIdChanged)
     // 详情页直接绑定；包含已格式化好的显示文字（durationText、categoryLabel 等）
-    Q_PROPERTY(QVariantMap selectedItem READ selectedItem NOTIFY selectedItemChanged)
+    Q_PROPERTY(QVariantMap selectedItem READ getSelectedItem NOTIFY selectedItemChanged)
 
 public:
     // 空状态：View 根据它决定显示哪种提示
@@ -62,22 +60,22 @@ public:
 
     explicit LibraryViewModel(MediaLibraryModel *library, QObject *parent = nullptr);
 
-    QAbstractItemModel *items() const;
+    QAbstractItemModel *getItems() const;
 
-    QString searchText() const { return m_searchText; }
+    QString getSearchText() const { return m_searchText; }
     void setSearchText(const QString &text);
 
-    QString category() const { return m_category; }
+    QString getCategory() const { return m_category; }
     void setCategory(const QString &category);
 
-    QVariantList categories() const { return m_categories; }
+    QVariantList getCategories() const { return m_categories; }
 
-    int resultCount() const;
-    int totalCount() const;
-    EmptyState emptyState() const;
+    int getResultCount() const;
+    int getTotalCount() const;
+    EmptyState getEmptyState() const;
 
-    int selectedId() const { return m_selectedId; }
-    QVariantMap selectedItem() const { return m_selectedItem; }
+    int getSelectedId() const { return m_selectedId; }
+    QVariantMap getSelectedItem() const { return m_selectedItem; }
 
     // 防抖间隔（毫秒）。测试里可以设成 0，不用真的等待
     void setSearchDebounceInterval(int ms);

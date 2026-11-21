@@ -7,9 +7,7 @@ import MediaLibrary.Core
 Placeholder {
     id: root
 
-    required property LibraryViewModel libraryVm
-
-    // 由 ListView 根据模型 roleNames() 自动赋值
+    // 这一行的数据：由 ListView 根据模型 roleNames() 自动赋值
     required property int mediaId
     required property string title
     required property string creator
@@ -17,11 +15,11 @@ Placeholder {
     required property int year
 
     name: "MediaRow"
-    hint: root.title + " — " + root.creator + "  →  libraryVm.select(" + root.mediaId + ")"
-    border.color: root.libraryVm.selectedId === root.mediaId ? Theme.accent : Theme.border
+    hint: root.title + " — " + root.creator + "  →  LibraryViewModel.select(" + root.mediaId + ")"
+    border.color: LibraryViewModel.selectedId === root.mediaId ? Theme.accent : Theme.border
 
     // TODO: 换成 ItemDelegate：CoverArt + 标题（高亮）+ 创作者 + 年份
     TapHandler {
-        onTapped: root.libraryVm.select(root.mediaId)
+        onTapped: LibraryViewModel.select(root.mediaId)
     }
 }

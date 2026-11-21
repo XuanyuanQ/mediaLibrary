@@ -1,4 +1,4 @@
-#include "mediajsonloader.h"
+#include "MediaJsonLoader.h"
 
 // 骨架阶段：只定义接口，具体实现待完成
 

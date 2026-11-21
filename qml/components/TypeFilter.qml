@@ -7,10 +7,8 @@ import MediaLibrary.Core
 Placeholder {
     id: root
 
-    required property LibraryViewModel libraryVm
-
     name: "TypeFilter ▾"
-    hint: "libraryVm.categories → category"
+    hint: "LibraryViewModel.categories → category"
 
-    // TODO: 换成 ComboBox：model = libraryVm.categories，选中后写入 libraryVm.category
+    // TODO: 换成 ComboBox：model = LibraryViewModel.categories，选中后写入 LibraryViewModel.category
 }
