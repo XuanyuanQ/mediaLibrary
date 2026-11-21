@@ -41,7 +41,7 @@ public:
 
     int getCount() const { return int(m_items.size()); }
 
-    // 整体替换数据（main.cpp 加载完 JSON 后调用；测试里用来塞假数据）
+    // 整体替换数据（main.cpp 加载完 JSON 后调用）
     void setItems(const QList<MediaItem> &items);
 
     // 按 ID 查完整记录，供 ViewModel 生成详情；找不到返回 std::nullopt

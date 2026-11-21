@@ -47,7 +47,7 @@ Item {
             }
             EmptyState {
                 anchors.centerIn: parent
-                visible: LibraryViewModel.emptyState !== LibraryViewModel.None
+                visible: LibraryData.emptyState !== LibraryData.None
             }
         }
     }

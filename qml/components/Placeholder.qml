@@ -1,4 +1,4 @@
-// 【骨架专用】占位框：显示组件名和它绑定的 ViewModel 属性，方便检查架构。
+// 【骨架专用】占位框：显示组件名和它绑定的数据属性，方便检查架构。
 // 各组件实现完成后删除本文件。
 import QtQuick
 import QtQuick.Controls

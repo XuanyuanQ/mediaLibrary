@@ -8,7 +8,7 @@ Placeholder {
     id: root
 
     name: "LanguageSwitch"
-    hint: "UiEvents.post(LanguageSelected, code) · 当前 " + LanguageManager.language
+    hint: "UiEvents.post(LanguageSelected, code) · 当前 " + LanguageData.language
 
-    // TODO: 换成分段按钮：Repeater over LanguageManager.availableLanguages
+    // TODO: 换成分段按钮：Repeater over LanguageData.availableLanguages
 }

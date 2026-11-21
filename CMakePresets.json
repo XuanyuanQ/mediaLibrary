@@ -28,9 +28,5 @@
   "buildPresets": [
     { "name": "mingw", "configurePreset": "mingw" },
     { "name": "mingw-debug", "configurePreset": "mingw-debug" }
-  ],
-  "testPresets": [
-    { "name": "mingw", "configurePreset": "mingw", "output": { "outputOnFailure": true } },
-    { "name": "mingw-debug", "configurePreset": "mingw-debug", "output": { "outputOnFailure": true } }
   ]
 }

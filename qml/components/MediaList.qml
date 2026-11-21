@@ -1,4 +1,4 @@
-// 媒体列表：绑定 LibraryViewModel.items（过滤后的代理模型），每一行用 MediaRow 显示
+// 媒体列表：绑定 LibraryData.items（过滤后的代理模型），每一行用 MediaRow 显示
 import QtQuick
 import QtQuick.Controls
 import MediaLibrary
@@ -17,7 +17,7 @@ ListView {
     //   - 调用 roleNames() 记下字段名，调用 rowCount() 得知一共几行
     //   - 根据滚动位置、列表高度和行高，算出屏幕上能看到第几行到第几行，
     //     只为这些行创建 MediaRow（看不见的行不创建，滚动时再按需创建/销毁）
-    model: LibraryViewModel.items
+    model: LibraryData.items
 
     // ListView 为每个可见行创建一个 MediaRow，并对每个字段调用一次模型的 data()，
     // 把结果自动填进 MediaRow 里和 roleNames() 同名的 required property（title、creator …），
@@ -31,13 +31,13 @@ ListView {
     // 没有结果时不显示（那时由 EmptyState 在列表中间显示计数）
     footer: Label {
         width: ListView.view.width
-        height: LibraryViewModel.resultCount > 0 ? implicitHeight : 0
-        visible: LibraryViewModel.resultCount > 0
+        height: LibraryData.resultCount > 0 ? implicitHeight : 0
+        visible: LibraryData.resultCount > 0
         topPadding: Theme.dp(12)
         bottomPadding: Theme.dp(12)
         horizontalAlignment: Text.AlignHCenter
-        // resultCount / totalCount 都是 C++ 的 Q_PROPERTY，搜索、筛选后自动更新
-        text: qsTr("%1 of %2 items").arg(LibraryViewModel.resultCount).arg(LibraryViewModel.totalCount)
+        // resultCount / totalCount 由 C++ 的 LibraryViewModel::publishCounts() 下发，搜索、筛选后自动更新
+        text: qsTr("%1 of %2 items").arg(LibraryData.resultCount).arg(LibraryData.totalCount)
         color: Theme.textSecondary
         font.pixelSize: Theme.sp(13)
     }

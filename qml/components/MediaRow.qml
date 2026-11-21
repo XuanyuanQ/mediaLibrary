@@ -20,7 +20,7 @@ ItemDelegate {
     required property string type
     required property int year
 
-    readonly property bool selected: LibraryViewModel.selectedId === root.mediaId
+    readonly property bool selected: LibraryData.selectedId === root.mediaId
 
     padding: Theme.dp(12)
 

@@ -1,5 +1,5 @@
 // 主窗口：只做横屏，内容就是 WideLayout（左列表 + 右详情）。
-// 不保存任何业务状态（搜索、筛选、选中都在 LibraryViewModel 单例里）。
+// 不保存任何业务状态（搜索、筛选、选中都在 C++ 里，QML 通过 LibraryData 单例读取）。
 import QtQuick
 import QtQuick.Controls
 import MediaLibrary

@@ -4,7 +4,6 @@
 # 构建产物：
 #   mediacore        静态库：Model + ViewModel + Service（C++ 逻辑）
 #   appMediaLibrary  可执行文件：main.cpp + QML 界面（QML 模块 MediaLibrary）
-#   tests/           单元测试，只链接 mediacore，不启动界面
 cmake_minimum_required(VERSION 3.21)
 
 project(MediaLibrary VERSION 0.1 LANGUAGES CXX)
@@ -20,8 +19,6 @@ if(QT_KNOWN_POLICY_QTP0004)
     qt_policy(SET QTP0004 NEW)
 endif()
 
-option(MEDIALIBRARY_BUILD_TESTS "Build unit tests" ON)
-
 # 和旧项目一样：Visual Studio 编译器必须搭配 MSVC 版 Qt，提前给出明确提示
 if(MSVC AND EXISTS "${QT6_INSTALL_PREFIX}/lib/libQt6Core.a")
     message(FATAL_ERROR
@@ -33,22 +30,29 @@ endif()
 # =============================================================================
 # 1. mediacore：C++ 逻辑静态库（Model / ViewModel / Service）
 # =============================================================================
-# 普通静态库，主程序和测试都链接它。
+# 普通静态库，逻辑和界面分开编译（以后补单元测试时可以直接链接它，不用启动界面）。
 # 交给 QML 的方式：main.cpp 里用 qmlRegisterSingletonInstance 把对象注册成单例
 # （模块名 MediaLibrary.Core），QML 里 import MediaLibrary.Core 之后直接写 LibraryViewModel.xxx。
 qt_add_library(mediacore STATIC
-    src/UiEvents.h                     # 上发接口（消息总线），各层共用
+    # 接口层：QML 和 C++ 之间的上下行通道
+    src/interface/UiEvents.h           # 上发：消息类型 + post 信号
+    src/interface/UiData.h             # 下发：全部下发数据的名字
+    src/interface/UiDataBase.h         src/interface/UiDataBase.cpp   # 下发统一入口 publish()
+    src/interface/UiProperty.h         # 下发属性宏 UI_PROPERTY
     src/model/MediaItem.h
     src/model/MediaJsonLoader.h        src/model/MediaJsonLoader.cpp
     src/model/MediaLibraryModel.h      src/model/MediaLibraryModel.cpp
     src/viewmodel/MediaFilterModel.h   src/viewmodel/MediaFilterModel.cpp
+    src/viewmodel/LibraryData.h        # 下发数据类（QML 只读）
     src/viewmodel/LibraryViewModel.h   src/viewmodel/LibraryViewModel.cpp
+    src/services/LanguageData.h        # 下发数据类（QML 只读）
     src/services/LanguageManager.h     src/services/LanguageManager.cpp
 )
 
 # 头文件按层分目录，include 时直接写文件名即可（例如 #include "LibraryViewModel.h"）
 target_include_directories(mediacore PUBLIC
     src
+    src/interface
     src/model
     src/viewmodel
     src/services
@@ -124,12 +128,4 @@ if(WIN32 AND DEPLOY_QT_RUNTIME)
                     "$<TARGET_FILE:appMediaLibrary>"
             COMMENT "Deploying Qt runtime next to appMediaLibrary.exe")
     endif()
-endif()
-
-# =============================================================================
-# 3. 单元测试
-# =============================================================================
-if(MEDIALIBRARY_BUILD_TESTS)
-    enable_testing()
-    add_subdirectory(tests)
 endif()

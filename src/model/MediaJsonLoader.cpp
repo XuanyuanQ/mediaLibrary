@@ -12,7 +12,7 @@ LoadResult MediaJsonLoader::load(const QString &path)
         result.error = QStringLiteral("Cannot open %1: %2").arg(path, file.errorString());
         return result;
     }
-    // 读取和解析分开：parse() 只关心 JSON 文本，测试时不用真的写文件
+    // 读取和解析分开：parse() 只关心 JSON 文本，和数据从哪里来无关
     return parse(file.readAll());
 }
 

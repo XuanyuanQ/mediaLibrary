@@ -24,7 +24,7 @@ struct LoadResult
  *
  * 和 MediaLibraryModel 分开的原因：
  *   - 单一职责：模型只管“持有数据并暴露给视图”，不关心数据从哪来
- *   - 可以单独测试各种坏数据
+ *   - 坏数据的处理集中在一处，不影响模型
  *   - 以后换数据源（数据库、网络）只需替换这里
  */
 class MediaJsonLoader
@@ -33,7 +33,7 @@ public:
     // 从文件（可以是 qrc 资源路径，如 ":/qt/qml/MediaLibrary/data/media.json"）加载
     static LoadResult load(const QString &path);
 
-    // 直接解析 JSON 文本（方便测试，不用真的写文件）
+    // 直接解析 JSON 文本（load() 读完文件后调用它）
     static LoadResult parse(const QByteArray &json);
 
 private:

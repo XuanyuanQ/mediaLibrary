@@ -9,15 +9,12 @@
 LanguageManager::LanguageManager(QObject *parent)
     : QObject(parent)
 {
-}
-
-QVariantList LanguageManager::getAvailableLanguages() const
-{
-    // 语言名称本身不翻译：用户在任何语言下都应该能认出自己的语言
-    return {
+    // 启动时下发初始数据。语言名称本身不翻译：用户在任何语言下都应该能认出自己的语言
+    m_data.publish(UiData::Language, QStringLiteral("en"));
+    m_data.publish(UiData::AvailableLanguages, QVariantList{
         QVariantMap{{QStringLiteral("code"), QStringLiteral("en")}, {QStringLiteral("label"), QStringLiteral("EN")}},
         QVariantMap{{QStringLiteral("code"), QStringLiteral("zh_CN")}, {QStringLiteral("label"), QStringLiteral("中")}},
-    };
+    });
 }
 
 void LanguageManager::handleUiEvent(UiEvents::Type type, const QVariant &data)
@@ -46,8 +43,8 @@ void LanguageManager::setLanguage(const QString &code)
 {
     // TODO: 卸载旧翻译；非 "en" 时加载 :/i18n/medialibrary_<code>.qm 并安装；
     //       m_engine->retranslate()
-    if (m_language == code)
+    if (m_data.getLanguage() == code)
         return;
-    m_language = code;
-    emit languageChanged();
+    m_data.publish(UiData::Language, code);   // 下发：当前语言
+    emit languageChanged();     // 通知其他 C++ 模块（main.cpp 连到 LibraryViewModel::retranslate）
 }
