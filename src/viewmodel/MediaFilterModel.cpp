@@ -2,7 +2,7 @@
 
 #include "MediaLibraryModel.h"
 
-// 已实现：搜索（按标题或创作者）。待实现：类型筛选、排序
+// 已实现：搜索（按标题或创作者）、类型筛选。待实现：排序
 
 MediaFilterModel::MediaFilterModel(QObject *parent)
     : QSortFilterProxyModel(parent)
@@ -43,8 +43,22 @@ void MediaFilterModel::setSearchText(const QString &text)
 
 void MediaFilterModel::setCategory(const QString &category)
 {
-    // TODO: 保存后重新过滤
+    if (m_category == category)
+        return;
+
+    // 和 setSearchText() 一样：修改条件前后通知代理，
+    // endFilterChange() 内部会逐行重新调用 filterAcceptsRow()，并发出 rowsRemoved / rowsInserted
+#if QT_VERSION >= QT_VERSION_CHECK(6, 10, 0)
+    beginFilterChange();
+#endif
+
     m_category = category;
+
+#if QT_VERSION >= QT_VERSION_CHECK(6, 10, 0)
+    endFilterChange(QSortFilterProxyModel::Direction::Rows);
+#else
+    invalidateFilter();
+#endif
 }
 
 const QStringList &MediaFilterModel::primaryTypes()
@@ -58,10 +72,11 @@ const QStringList &MediaFilterModel::primaryTypes()
 
 bool MediaFilterModel::matchesCategory(const QString &type, const QString &category)
 {
-    // TODO: ""=全部；"Others"=不在 primaryTypes() 里；其他=相等
-    Q_UNUSED(type)
-    Q_UNUSED(category)
-    return true;
+    if (category.isEmpty())
+        return true;                                   // ""：全部类型
+    if (category == QLatin1String("Others"))
+        return !primaryTypes().contains(type);         // "Others"：不属于四个主要类型（例如 Audiobook）
+    return type == category;                           // 其他：类型必须完全相同
 }
 
 // 谁调用：QSortFilterProxyModel 内部。在 setSourceModel()、源数据变化（modelReset 等）、
@@ -71,16 +86,18 @@ bool MediaFilterModel::matchesCategory(const QString &type, const QString &categ
 // 返回值：      true = 这一行显示，false = 过滤掉
 bool MediaFilterModel::filterAcceptsRow(int sourceRow, const QModelIndex &sourceParent) const
 {
-    // TODO: 类型筛选（待实现）
-
-    // 没有关键字：全部显示
-    if (m_terms.isEmpty())
-        return true;
-
-    // 取出源模型这一行的标题和创作者：
     // 先用行号向源模型要这一行的“坐标卡片”，再用 idx.data() 取字段
     // （idx.data() 实际调用的是 MediaLibraryModel::data()）
     const QModelIndex idx = sourceModel()->index(sourceRow, 0, sourceParent);
+
+    // 1. 类型筛选：类型不符合，直接过滤掉
+    if (!matchesCategory(idx.data(MediaLibraryModel::TypeRole).toString(), m_category))
+        return false;
+
+    // 2. 搜索：没有关键字时，通过了类型筛选就显示
+    if (m_terms.isEmpty())
+        return true;
+
     const QString title = idx.data(MediaLibraryModel::TitleRole).toString();
     const QString creator = idx.data(MediaLibraryModel::CreatorRole).toString();
 

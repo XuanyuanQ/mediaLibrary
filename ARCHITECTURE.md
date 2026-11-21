@@ -13,7 +13,7 @@
 | 题目必做 | 媒体列表 | 每行显示标题和创作者（另有类型图标、年份） |
 | 题目必做 | 搜索 | 按标题或创作者搜索，不区分大小写，支持多个关键字 |
 | 题目必做 | 详情 | 选中条目后显示完整信息 |
-| 题目必做 | 无结果提示 | 说明原因，并提供“清除搜索和筛选”按钮 |
+| 题目必做 | 无结果提示 | 显示一行文字说明没有匹配结果（不加按钮） |
 | 题目必做 | 技术要求 | 界面用 QML，数据模型用 C++ |
 | 加分项 | 类型筛选 | 下拉框：All / Movies / Music / Books / Podcasts / Others |
 | 加分项 | 语言切换 | 中英文**运行时**切换，不需要重启 |
@@ -191,7 +191,6 @@ classDiagram
         +selectedItem : QVariantMap
         +select(id)
         +clearSelection()
-        +clearFilters()
         +retranslate()
         -QTimer searchDebounce
     }
@@ -236,7 +235,6 @@ classDiagram
 | `selectedItem` | `QVariantMap` | 详情页直接绑定，包含**已格式化**的 `durationText`（“2 h 00 min” / “2 小时 00 分”）、`categoryLabel` 等 |
 | `select(id)` | 方法 | 选中某一项 |
 | `clearSelection()` | 方法 | 取消选中（窄屏返回列表时调用） |
-| `clearFilters()` | 方法 | 清空搜索词和类型，给“清除搜索和筛选”按钮用 |
 | `retranslate()` | 槽 | 语言切换后重新生成 `categories` 和 `selectedItem` 里的文字 |
 
 **界面规则（都在 ViewModel 里，可测试）**
@@ -299,7 +297,7 @@ flowchart TB
 | `components/LanguageSwitch.qml` | `EN \| 中` 分段按钮 | `language.language`、`setLanguage()` |
 | `components/MediaList.qml` / `MediaRow.qml` | 列表和每一行；搜索命中高亮 | `items`、`select()`、`selectedId` |
 | `components/DetailView.qml` | 详情内容 | `selectedItem` |
-| `components/EmptyState.qml` | 无数据 / 无结果提示 | `emptyState`、`clearFilters()` |
+| `components/EmptyState.qml` | 无数据 / 无结果提示 | `emptyState` |
 | `components/CoverArt.qml` | 按类型生成封面占位 | — |
 
 ### 6.3 状态归属
@@ -491,7 +489,7 @@ flowchart LR
 |---|---|
 | `tst_mediajsonloader` | 正常加载；文件不存在；JSON 格式错误；缺少标题或 ID 的记录被跳过 |
 | `tst_mediafiltermodel` | 空搜索返回全部；按标题、按创作者、不区分大小写；多关键字 AND；类型筛选；`Others` 分类；搜索 + 筛选组合 |
-| `tst_libraryviewmodel` | 防抖（连续输入只过滤一次）；`select` / `clearSelection`；选中项被过滤后仍保留；`emptyState` 三种情况；`clearFilters`；`resultCount`、`totalCount` 信号；`retranslate` 后 `categories` 和时长文字更新 |
+| `tst_libraryviewmodel` | 防抖（连续输入只过滤一次）；`select` / `clearSelection`；选中项被过滤后仍保留；`emptyState` 三种情况；`resultCount`、`totalCount` 信号；`retranslate` 后 `categories` 和时长文字更新 |
 | 手动验证 | 宽窄切换时状态保留；中英文切换即时生效；1920×720 和 390×844 两种分辨率截图 |
 
 ---

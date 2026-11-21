@@ -8,7 +8,7 @@ Placeholder {
     id: root
 
     name: "EmptyState"
-    hint: "LibraryViewModel.emptyState → clearFilters()"
+    hint: "LibraryViewModel.emptyState"
 
-    // TODO: 按 emptyState 显示不同文案；NoMatch 时提供“清除搜索和筛选”按钮
+    // TODO: 按 emptyState 显示一行提示文字（不加按钮）
 }

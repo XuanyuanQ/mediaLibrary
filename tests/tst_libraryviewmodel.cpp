@@ -24,7 +24,6 @@ private slots:
     void selectionSurvivesFiltering()         { QSKIP("Not implemented yet"); }
     void emptyStateNoData()                   { QSKIP("Not implemented yet"); }
     void emptyStateNoMatch()                  { QSKIP("Not implemented yet"); }
-    void clearFiltersResetsSearchAndCategory(){ QSKIP("Not implemented yet"); }
     void countsEmitSignals()                  { QSKIP("Not implemented yet"); }
     void retranslateRebuildsDisplayText()     { QSKIP("Not implemented yet"); }
 };

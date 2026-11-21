@@ -90,7 +90,6 @@ public:
     // ---- 供 View 调用的操作 ----
     Q_INVOKABLE void select(int mediaId);
     Q_INVOKABLE void clearSelection();
-    Q_INVOKABLE void clearFilters();
 
 public slots:
     // 语言切换后由 main.cpp 连接的信号触发：重建 categories 和 selectedItem 的显示文字

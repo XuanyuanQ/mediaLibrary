@@ -3,7 +3,7 @@
 #include "MediaFilterModel.h"
 #include "MediaLibraryModel.h"
 
-// 已实现：搜索、计数。待实现：类型筛选、选中、空状态、语言相关文字
+// 已实现：搜索、类型筛选、计数。待实现：选中、空状态、语言相关文字
 
 LibraryViewModel::LibraryViewModel(MediaLibraryModel *library, QObject *parent)
     : QObject(parent)
@@ -58,10 +58,11 @@ void LibraryViewModel::setSearchText(const QString &text)
 
 void LibraryViewModel::setCategory(const QString &category)
 {
-    // TODO: 保存后立即交给 m_filter（下拉框选择不需要防抖）
     if (m_category == category)
         return;
     m_category = category;
+    // 下拉框选一次就是最终结果，不需要像搜索那样防抖，立即交给过滤模型
+    m_filter->setCategory(category);
     emit categoryChanged();
 }
 
@@ -97,11 +98,6 @@ void LibraryViewModel::clearSelection()
     // TODO: selectedId = -1，清空 selectedItem
 }
 
-void LibraryViewModel::clearFilters()
-{
-    // TODO: 清空搜索词（不经过防抖，立即生效）和分类
-}
-
 void LibraryViewModel::retranslate()
 {
     rebuildCategories();
@@ -117,8 +113,19 @@ void LibraryViewModel::applySearch()
 
 void LibraryViewModel::rebuildCategories()
 {
-    // TODO: 用 tr() 生成 [{key:"", label:"All types"}, {key:"Movie", label:"Movies"}, …]
-    m_categories = {};
+    // 下拉框的选项：key 交给过滤模型（与数据里的 type 对应），label 显示在界面上。
+    // label 用 tr() 包起来，以后做语言切换时可以翻译
+    const auto option = [](const QString &key, const QString &label) {
+        return QVariantMap{{QStringLiteral("key"), key}, {QStringLiteral("label"), label}};
+    };
+    m_categories = {
+        option(QString(), tr("All types")),
+        option(QStringLiteral("Movie"), tr("Movies")),
+        option(QStringLiteral("Music"), tr("Music")),
+        option(QStringLiteral("Ebook"), tr("Books")),
+        option(QStringLiteral("Podcast"), tr("Podcasts")),
+        option(QStringLiteral("Others"), tr("Others")),
+    };
     emit categoriesChanged();
 }
 
