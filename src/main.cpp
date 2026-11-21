@@ -1,7 +1,7 @@
 // 程序入口：在这里创建并组装所有 C++ 对象，再把“接口对象”注册成 QML 单例。
 // QML 只能看到三个单例，逻辑类（LibraryManager、LanguageManager）对 QML 不可见：
-//   上发（QML → C++）：UiEvents.post(类型, 数据)，按模块分发给各自的 handleUiEvent()
-//   下发（C++ → QML）：LibraryData.xxx、LanguageData.xxx 的只读属性，逻辑类 publish(UiData::名字, 值) 后 QML 绑定自动刷新
+//   上发（QML → C++）：UiEvents.post(FromUi.xxx, 数据)，按模块分发给各自的 handleUiEvent()
+//   下发（C++ → QML）：LibraryData.toUiXxx、LanguageData.toUiXxx 的只读属性，逻辑类 publish(ToUi::名字, 值) 后 QML 绑定自动刷新
 #include <QGuiApplication>
 #include <QQmlApplicationEngine>
 #include <QQuickStyle>
@@ -11,6 +11,7 @@
 #include "LibraryManager.h"
 #include "MediaJsonLoader.h"
 #include "MediaLibraryModel.h"
+#include "FromUi.h"
 #include "UiEvents.h"
 
 int main(int argc, char *argv[])
@@ -38,7 +39,7 @@ int main(int argc, char *argv[])
                      &libraryManager, &LibraryManager::retranslate);
 
     // ---- 上发：每个模块 connect 一次 ----
-    // 每个模块都会收到所有消息，各自的 handleUiEvent() 只处理本模块那一段（见 UiEvents.h 的枚举）。
+    // 每个模块都会收到所有消息，各自的 handleUiEvent() 只处理本模块那一段（见 FromUi.h 的枚举）。
     // 加新消息不用改这里；加新模块才在这里加一行
     UiEvents uiEvents;
     QObject::connect(&uiEvents, &UiEvents::post, &libraryManager, &LibraryManager::handleUiEvent); // 100~199
@@ -46,9 +47,12 @@ int main(int argc, char *argv[])
 
     // ---- 注册成 QML 单例（必须在加载 QML 之前）----
     // 参数：模块名、主版本、次版本、QML 中使用的名字、对象指针。
-    // QML 里 import MediaLibrary.Core 之后，就能直接写 LibraryData.searchText、UiEvents.post(...)。
+    // QML 里 import MediaLibrary.Core 之后，就能直接写 LibraryData.toUiSearchText、UiEvents.post(FromUi.xxx, ...)。
     // 对象仍归 C++ 所有（QML 引擎不会删除它），所以要保证它活得比引擎久，见下方说明。
     qmlRegisterSingletonInstance("MediaLibrary.Core", 1, 0, "UiEvents", &uiEvents);            // 上发
+    // 上发消息名：QML 里写 FromUi.ItemClicked。只是一组枚举，不能创建对象
+    qmlRegisterUncreatableMetaObject(FromUi::staticMetaObject, "MediaLibrary.Core", 1, 0, "FromUi",
+                                     QStringLiteral("FromUi only provides message names"));
     qmlRegisterSingletonInstance("MediaLibrary.Core", 1, 0, "LibraryData", libraryManager.data());  // 下发
     qmlRegisterSingletonInstance("MediaLibrary.Core", 1, 0, "LanguageData", language.data());  // 下发
 

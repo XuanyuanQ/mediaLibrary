@@ -1,6 +1,6 @@
 // 语言切换：EN | SV 分段按钮。
-// 下发：选项来自 LanguageData.availableLanguages，当前语言 LanguageData.language 高亮（橙色）。
-// 上发：点击后 UiEvents.post(LanguageSelected, 语言代码)，C++ 的 LanguageManager 加载翻译并刷新界面。
+// 下发：选项来自 LanguageData.toUiAvailableLanguages，当前语言 LanguageData.toUiLanguage 高亮（橙色）。
+// 上发：点击后 UiEvents.post(FromUi.LanguageSelected, 语言代码)，C++ 的 LanguageManager 加载翻译并刷新界面。
 import QtQuick
 import QtQuick.Controls
 import MediaLibrary
@@ -23,20 +23,20 @@ Rectangle {
 
         // 每种语言一个按钮。modelData 是 C++ 下发的 {code, label}
         Repeater {
-            model: LanguageData.availableLanguages
+            model: LanguageData.toUiAvailableLanguages
 
             delegate: AbstractButton {
                 id: button
 
                 required property var modelData
-                readonly property bool current: LanguageData.language === modelData.code
+                readonly property bool current: LanguageData.toUiLanguage === modelData.code
 
                 implicitWidth: Theme.dp(40)
                 implicitHeight: Theme.dp(28)
                 focusPolicy: Qt.NoFocus
 
                 // 上发：只报告“用户选了哪种语言”，翻译加载和界面刷新都在 C++ 里
-                onClicked: UiEvents.post(UiEvents.LanguageSelected, modelData.code)
+                onClicked: UiEvents.post(FromUi.LanguageSelected, modelData.code)
 
                 contentItem: Text {
                     text: button.modelData.label

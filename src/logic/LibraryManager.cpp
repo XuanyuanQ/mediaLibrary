@@ -6,7 +6,7 @@
 #include "MediaLibraryModel.h"
 
 // 已实现：搜索、类型筛选、计数、空状态、选中和详情。待实现：语言相关文字
-// 所有下发都走统一入口 m_data.publish(UiData::名字, 值)，搜索 "publish(" 可以看到全部下发点
+// 所有下发都走统一入口 m_data.publish(ToUi::名字, 值)，搜索 "publish(" 可以看到全部下发点
 
 LibraryManager::LibraryManager(MediaLibraryModel *library, QObject *parent)
     : QObject(parent)
@@ -40,32 +40,32 @@ LibraryManager::LibraryManager(MediaLibraryModel *library, QObject *parent)
     publishCategories();
 }
 
-void LibraryManager::handleUiEvent(UiEvents::Type type, const QVariant &data)
+void LibraryManager::handleUiEvent(FromUi::Message type, const QVariant &data)
 {
     // 谁调用：QML 里 UiEvents.post(...) → main.cpp 的 connect → 这里。
     // 所有模块都会收到每一条消息，不是媒体库模块的直接忽略
-    if (UiEvents::moduleOf(type) != UiEvents::Library)
+    if (FromUi::moduleOf(type) != FromUi::Library)
         return;
 
     // data 是 QVariant，没有编译期类型检查，所以先检查类型，不对就打警告并丢弃
     switch (type) {
-    case UiEvents::SearchEdited:
-    case UiEvents::TypeSelected:
+    case FromUi::SearchEdited:
+    case FromUi::TypeSelected:
         if (data.typeId() != QMetaType::QString) {
-            qWarning() << "UiEvents:" << type << "expects a string, got" << data;
+            qWarning() << type << "expects a string, got" << data;
             return;
         }
-        if (type == UiEvents::SearchEdited)
+        if (type == FromUi::SearchEdited)
             setSearchText(data.toString());
         else
             setCategory(data.toString());
         break;
 
-    case UiEvents::ItemClicked: {
+    case FromUi::ItemClicked: {
         bool ok = false;
         const int id = data.toInt(&ok);   // QML 传来的数字可能是 int 也可能是 double，都能转
         if (!ok) {
-            qWarning() << "UiEvents:" << type << "expects a media id, got" << data;
+            qWarning() << type << "expects a media id, got" << data;
             return;
         }
         select(id);
@@ -73,7 +73,7 @@ void LibraryManager::handleUiEvent(UiEvents::Type type, const QVariant &data)
     }
 
     default:
-        qWarning() << "UiEvents: unhandled library message" << type;
+        qWarning() << "unhandled library message" << type;
         break;
     }
 }
@@ -83,7 +83,7 @@ void LibraryManager::setSearchText(const QString &text)
     // 谁调用：handleUiEvent() 收到 SearchEdited（来自 SearchField.qml）
     if (m_data.getSearchText() == text)
         return;
-    m_data.publish(UiData::SearchText, text);   // 下发：搜索框文字立即更新（✕ 清空就是靠它把框清空）
+    m_data.publish(ToUi::SearchText, text);   // 下发：搜索框文字立即更新（✕ 清空就是靠它把框清空）
     m_searchDebounce.start();     // 过滤要等停止输入 200ms 后再做（重新开始计时）
 }
 
@@ -95,15 +95,15 @@ void LibraryManager::setCategory(const QString &category)
     // 下拉框选一次就是最终结果，不需要像搜索那样防抖，立即交给过滤模型
     // （过滤后行数变化 → publishCounts() 下发计数）
     m_filter->setCategory(category);
-    m_data.publish(UiData::Category, category);   // 下发：当前类型（下拉框据此变橙色）
+    m_data.publish(ToUi::Category, category);   // 下发：当前类型（下拉框据此变橙色）
 }
 
 void LibraryManager::publishCounts()
 {
     // 谁调用：过滤结果行数变化、媒体库重新加载、构造函数
-    m_data.publish(UiData::ResultCount, m_filter->rowCount());                    // 下发：结果数
-    m_data.publish(UiData::TotalCount, m_library ? m_library->getCount() : 0);    // 下发：总数
-    m_data.publish(UiData::EmptyState, QVariant::fromValue(computeEmptyState())); // 下发：空状态
+    m_data.publish(ToUi::ResultCount, m_filter->rowCount());                    // 下发：结果数
+    m_data.publish(ToUi::TotalCount, m_library ? m_library->getCount() : 0);    // 下发：总数
+    m_data.publish(ToUi::EmptyState, QVariant::fromValue(computeEmptyState())); // 下发：空状态
 }
 
 LibraryData::EmptyState LibraryManager::computeEmptyState() const
@@ -122,7 +122,7 @@ void LibraryManager::select(int mediaId)
     // 谁调用：handleUiEvent() 收到 ItemClicked（来自 MediaRow.qml 的点击）
     if (m_data.getSelectedId() == mediaId)
         return;
-    m_data.publish(UiData::SelectedId, mediaId);   // 下发：MediaRow 的 selected 绑定刷新 → 被点的那一行加橙色边框
+    m_data.publish(ToUi::SelectedId, mediaId);   // 下发：MediaRow 的 selected 绑定刷新 → 被点的那一行加橙色边框
     publishSelectedItem();           // 下发：详情数据 → DetailView 刷新
 }
 
@@ -146,7 +146,7 @@ void LibraryManager::publishCategories()
     const auto option = [](const QString &key, const QString &label) {
         return QVariantMap{{QStringLiteral("key"), key}, {QStringLiteral("label"), label}};
     };
-    m_data.publish(UiData::Categories, QVariantList{   // 下发：下拉框选项
+    m_data.publish(ToUi::Categories, QVariantList{   // 下发：下拉框选项
         option(QString(), tr("All types")),
         option(QStringLiteral("Movie"), tr("Movies")),
         option(QStringLiteral("Music"), tr("Music")),
@@ -193,5 +193,5 @@ void LibraryManager::publishSelectedItem()
             {QStringLiteral("description"), item->description},
         };
     }
-    m_data.publish(UiData::SelectedItem, detail);   // 下发：详情
+    m_data.publish(ToUi::SelectedItem, detail);   // 下发：详情
 }

@@ -8,19 +8,19 @@
 #include <functional>
 #include <type_traits>
 
-#include "UiData.h"
+#include "ToUi.h"
 
 Q_DECLARE_LOGGING_CATEGORY(lcUiData)
 
 /*
  * 【下发统一入口】所有数据类（LibraryData、LanguageData）的基类。
  *
- *   m_data.publish(UiData::ResultCount, 5);
+ *   m_data.publish(ToUi::ResultCount, 5);
  *
  * 工作方式：
  *   - 数据类里每个 UI_PROPERTY 在对象创建时，自动把“名字 → setter”登记到 m_setters 表里
  *   - publish() 按名字查表，找到就调用 setter：检查类型 → 值变了才发出 xxxChanged → QML 绑定刷新
- *   - 名字不属于这个数据类（例如往 LibraryData 发 UiData::Language）→ 打警告并丢弃
+ *   - 名字不属于这个数据类（例如往 LibraryData 发 ToUi::Language）→ 打警告并丢弃
  *   - 值的类型不对（例如往 int 属性发字符串）→ 打警告并丢弃
  *
  * 为什么不用 QObject::setProperty("名字", 值)：
@@ -37,11 +37,11 @@ public:
     using QObject::QObject;
 
     // 唯一的下发入口
-    void publish(UiData::Key key, const QVariant &value);
+    void publish(ToUi::Message key, const QVariant &value);
 
 protected:
     // 由 UI_PROPERTY 宏在对象创建时调用，返回值只是为了能写在成员初始化里
-    bool registerSetter(UiData::Key key, std::function<void(const QVariant &)> setter);
+    bool registerSetter(ToUi::Message key, std::function<void(const QVariant &)> setter);
 
     // 检查下发的值和属性类型是否一致。数字类属性（int、枚举）接受任意数字，其他类型必须完全一致
     template<typename T>

@@ -20,7 +20,7 @@ ItemDelegate {
     required property string type
     required property int year
 
-    readonly property bool selected: LibraryData.selectedId === root.mediaId
+    readonly property bool selected: LibraryData.toUiSelectedId === root.mediaId
 
     padding: Theme.dp(12)
 
@@ -76,7 +76,7 @@ ItemDelegate {
     }
 
     // 上发：点击后发一条 ItemClicked 消息，C++ 的 LibraryManager::handleUiEvent() 交给 select()
-    onClicked: UiEvents.post(UiEvents.ItemClicked, root.mediaId)
+    onClicked: UiEvents.post(FromUi.ItemClicked, root.mediaId)
 
     Accessible.name: root.title + ", " + root.creator
 }

@@ -27,8 +27,9 @@ endif()
 # （模块名 MediaLibrary.Core），QML 里写 UiEvents.post(...)、LibraryData.xxx。
 qt_add_library(mediacore STATIC
     # 接口层：QML 只能看到这一层（上发 UiEvents，下发 LibraryData / LanguageData）
-    src/interface/UiEvents.h           # 上发：消息类型 + post 信号
-    src/interface/UiData.h             # 下发：全部下发数据的名字
+    src/interface/FromUi.h             # 上发消息表：全部上发消息的名字（UI 发出）
+    src/interface/UiEvents.h           # 上发统一入口 post 信号
+    src/interface/ToUi.h               # 下发消息表：全部下发数据的名字（发往 UI）
     src/interface/UiDataBase.h         src/interface/UiDataBase.cpp   # 下发统一入口 publish()
     src/interface/UiProperty.h         # 下发属性宏 UI_PROPERTY
     src/interface/LibraryData.h        # 媒体库下发数据（QML 只读）

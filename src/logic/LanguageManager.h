@@ -16,8 +16,8 @@ class QQmlEngine;
  *           QQmlEngine::retranslate()（所有 qsTr() 自动刷新）-> 发出 languageChanged
  *
  * 逻辑类，不对 QML 开放：
- *   上发：QML → UiEvents.post(LanguageSelected, code) → handleUiEvent() → setLanguage()
- *   下发：m_data.publish(UiData::Language, code) → LanguageData 发出 languageChanged → QML 绑定刷新
+ *   上发：QML → UiEvents.post(FromUi.LanguageSelected, code) → handleUiEvent() → setLanguage()
+ *   下发：m_data.publish(ToUi::Language, code) → LanguageData 发出 toUiLanguageChanged → QML 绑定刷新
  *
  * 它不知道 LibraryManager 的存在；ViewModel 里用 tr() 生成的文字，
  * 由 main.cpp 把 languageChanged 连接到 LibraryManager::retranslate() 来刷新。
@@ -37,7 +37,7 @@ public:
 
     // ---- 处理上发消息 ----
     // 入口：main.cpp 把 UiEvents::post connect 到这里。只处理语言模块（200~299）的消息
-    void handleUiEvent(UiEvents::Type type, const QVariant &data);
+    void handleUiEvent(FromUi::Message type, const QVariant &data);
 
     // 由 handleUiEvent 分发（LanguageSelected）。不加 Q_INVOKABLE：QML 不能直接调用
     void setLanguage(const QString &code);

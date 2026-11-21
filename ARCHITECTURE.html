@@ -108,8 +108,8 @@ flowchart TB
     LD -.->|下发：属性绑定| Comps
     UE -->|"100~199 媒体库消息"| LVM
     UE -->|"200~299 语言消息"| Lang
-    LVM -->|"publish(UiData::名字, 值)"| LD
-    Lang -->|"publish(UiData::名字, 值)"| LD
+    LVM -->|"publish(ToUi::名字, 值)"| LD
+    Lang -->|"publish(ToUi::名字, 值)"| LD
     Filter -->|sourceModel| Library
     Loader --> Json
     Lang --> Qm
@@ -166,10 +166,10 @@ engine.loadFromModule("MediaLibrary", "Main");
 import MediaLibrary.Core
 
 TextField {
-    text: LibraryData.searchText                   // 下发：读属性
-    onTextEdited: UiEvents.post(UiEvents.SearchEdited, text)      // 上发：发消息
+    text: LibraryData.toUiSearchText                   // 下发：读属性
+    onTextEdited: UiEvents.post(FromUi.SearchEdited, text)      // 上发：发消息
 }
-Button    { onClicked: UiEvents.post(UiEvents.LanguageSelected, "sv") }
+Button    { onClicked: UiEvents.post(FromUi.LanguageSelected, "sv") }
 ```
 
 - **单例写法**：`main.cpp` 创建对象后，用 `qmlRegisterSingletonInstance` 把它注册成单例。注册的是三个接口对象（`UiEvents`、`LibraryData`、`LanguageData`），逻辑类不注册；对象仍归 C++ 所有，QML 引擎不会删除它，所以引擎要最后创建、最先销毁。这种注册发生在运行时，代价是 Qt Creator 的补全和 qmllint 认不出这两个单例，但不影响编译和运行。不使用已不推荐的 `setContextProperty`。
@@ -182,10 +182,17 @@ Button    { onClicked: UiEvents.post(UiEvents.LanguageSelected, "sv") }
 
 | 方向 | 接口 | QML 写法 | 规则 |
 |---|---|---|---|
-| **上发**（QML → C++） | `UiEvents` 消息总线：一个信号 `post(类型, 数据)` | `UiEvents.post(UiEvents.ItemClicked, mediaId)` | QML 只报告“发生了什么”，不直接调用逻辑；消息按模块分段，各模块的 `handleUiEvent()` 只处理自己那一段 |
-| **下发**（C++ → QML） | 纯数据类 `LibraryData`、`LanguageData` 的只读属性 | `text: LibraryData.searchText` | 逻辑类算完后调用统一入口 `m_data.publish(UiData::名字, 值)`；名字在 `src/interface/UiData.h` 集中登记；值变了才发 NOTIFY，QML 绑定自动刷新 |
+| **上发**（QML → C++） | `UiEvents` 消息总线：一个信号 `post(类型, 数据)` | `UiEvents.post(FromUi.ItemClicked, mediaId)` | QML 只报告“发生了什么”，不直接调用逻辑；消息按模块分段，各模块的 `handleUiEvent()` 只处理自己那一段 |
+| **下发**（C++ → QML） | 纯数据类 `LibraryData`、`LanguageData` 的只读属性 | `text: LibraryData.toUiSearchText` | 逻辑类算完后调用统一入口 `m_data.publish(ToUi::名字, 值)`；名字在 `src/interface/ToUi.h` 集中登记；值变了才发 NOTIFY，QML 绑定自动刷新 |
 
-上发消息表（定义在 `src/interface/UiEvents.h` 的枚举里）：
+**命名规则：从名字就能看出方向**
+
+| 方向 | 消息名 | QML 写法 |
+|---|---|---|
+| 上发（UI 发出） | `FromUi::ItemClicked` | `UiEvents.post(FromUi.ItemClicked, id)` |
+| 下发（发往 UI） | `ToUi::SelectedItem` | `LibraryData.toUiSelectedItem`（属性名统一带 `toUi` 前缀） |
+
+上发消息表（定义在 `src/interface/FromUi.h` 的枚举里）：
 
 | 模块（编号段） | 消息 | data 类型 | 谁发出 | 处理 |
 |---|---|---|---|---|
@@ -194,9 +201,9 @@ Button    { onClicked: UiEvents.post(UiEvents.LanguageSelected, "sv") }
 | | `ItemClicked` | `int`（媒体 ID） | `MediaRow` | → `select` |
 | 语言（200~299） | `LanguageSelected` | `QString`（语言代码） | `LanguageSwitch` | `LanguageManager::handleUiEvent` → `setLanguage` |
 
-- **按模块分发**：`main.cpp` 里每个模块 connect 一次，所有模块都收到每条消息，用 `UiEvents::moduleOf(类型)` 过滤掉不属于自己的。connect 的数量等于模块数，不等于消息数；加新消息只改枚举和对应模块的 `handleUiEvent()`，`main.cpp` 不用动。
+- **按模块分发**：`main.cpp` 里每个模块 connect 一次，所有模块都收到每条消息，用 `FromUi::moduleOf(类型)` 过滤掉不属于自己的。connect 的数量等于模块数，不等于消息数；加新消息只改枚举和对应模块的 `handleUiEvent()`，`main.cpp` 不用动。
 - **统一入口**：所有界面操作都经过 `post()` 这一个信号，以后加日志、转发到其他进程、录制回放，都只改这一个地方。
-- **类型检查**：数据用 `QVariant` 传，没有编译期检查，所以 `handleUiEvent()` 先检查类型，不对就打警告并丢弃，例如 `UiEvents::ItemClicked expects a media id, got QVariant(QString, "abc")`。
+- **类型检查**：数据用 `QVariant` 传，没有编译期检查，所以 `handleUiEvent()` 先检查类型，不对就打警告并丢弃，例如 `FromUi::ItemClicked expects a media id, got QVariant(QString, "abc")`。
 - 逻辑类（`LibraryManager`、`LanguageManager`）不注册到 QML；数据类的属性没有 `WRITE`，所以 QML **只能**通过 `UiEvents` 上发、只能读数据类，这条规则由 Qt 保证，不靠约定。
 
 **下发：一个消息表 + 一个统一入口 `publish()`**（参考车机 cluster 项目的 `setProperty` + `DATA_PROPERTY_DEFINE`）
@@ -205,31 +212,31 @@ Button    { onClicked: UiEvents.post(UiEvents.LanguageSelected, "sv") }
 
 | | 名字集中定义在 | 统一入口 |
 |---|---|---|
-| 上发 | `src/interface/UiEvents.h` 的 `UiEvents::Type` | `UiEvents.post(UiEvents::ItemClicked, id)` |
-| 下发 | `src/interface/UiData.h` 的 `UiData::Key` | `m_data.publish(UiData::SelectedItem, detail)` |
+| 上发 | `src/interface/FromUi.h` 的 `FromUi::Message` | `UiEvents.post(FromUi::ItemClicked, id)` |
+| 下发 | `src/interface/ToUi.h` 的 `ToUi::Message` | `m_data.publish(ToUi::SelectedItem, detail)` |
 
 ```cpp
-// 1. UiData.h：所有下发数据的名字，按模块分段（媒体库 100~199，语言 200~299）
+// 1. ToUi.h：所有下发数据的名字，按模块分段（媒体库 100~199，语言 200~299）
 enum Key { SearchText = 100, Category, Categories, ResultCount, ..., Language = 200, ... };
 
-// 2. LibraryData.h：只有数据，没有逻辑。一行定义一个属性，名字必须和 UiData.h 里的一样
-UI_PROPERTY(int, resultCount, ResultCount)
-// 宏展开后 = Q_PROPERTY(int resultCount READ getResultCount NOTIFY resultCountChanged)（QML 只读）
-//          + getResultCount() + resultCountChanged() + 私有的 setResultCount() + 存储
-//          + 对象创建时把 “UiData::ResultCount → setResultCount” 登记到 UiDataBase 的表里
+// 2. LibraryData.toUiH：只有数据，没有逻辑。一行定义一个属性，名字只写一次，必须和 ToUi.h 里的一样；QML 属性名自动加 toUi 前缀
+UI_PROPERTY(int, ResultCount)
+// 宏展开后 = Q_PROPERTY(int toUiResultCount READ getResultCount NOTIFY toUiResultCountChanged)（QML 只读）
+//          + getResultCount() + toUiResultCountChanged() + 私有的 setResultCount() + 存储
+//          + 对象创建时把 “ToUi::ResultCount → setResultCount” 登记到 UiDataBase 的表里
 
 // 3. LibraryManager.cpp：逻辑算完后通过统一入口下发
 void LibraryManager::publishCounts() {
-    m_data.publish(UiData::ResultCount, m_filter->rowCount());
-    m_data.publish(UiData::TotalCount, m_library->getCount());
-    m_data.publish(UiData::EmptyState, QVariant::fromValue(computeEmptyState()));
+    m_data.publish(ToUi::ResultCount, m_filter->rowCount());
+    m_data.publish(ToUi::TotalCount, m_library->getCount());
+    m_data.publish(ToUi::EmptyState, QVariant::fromValue(computeEmptyState()));
 }
 ```
 
-- **名字集中登记，没登记就编译报错**：`publish(UiData::Foo, …)` 或 `UI_PROPERTY(int, foo, Foo)` 里的 `Foo` 不在 `UiData.h` 里，编译就失败。
+- **名字集中登记，没登记就编译报错**：`publish(ToUi::Foo, …)` 或 `UI_PROPERTY(int, Foo)` 里的 `Foo` 不在 `ToUi.h` 里，编译就失败。
 - **`publish()` 查表调用 setter，不用 `QObject::setProperty`**：`setProperty` 要求属性带 `WRITE`，带了之后 QML 也能写，“QML 只读”就保证不了；而且名字写错时它会悄悄新建一个动态属性，不报错。
-- **运行时检查**：值的类型不对（`UiData::ResultCount expects int, got QVariant(QString, "abc")`）或者发错了数据类（`LibraryData has no property for UiData::Language`），都会打警告并丢弃。
-- **统一的下发日志**：运行前设置 `QT_LOGGING_RULES="ui.data.debug=true"`，每一次下发都会打印出来，例如 `ui.data: UiData::ResultCount QVariant(int, 2)`。
+- **运行时检查**：值的类型不对（`ToUi::ResultCount expects int, got QVariant(QString, "abc")`）或者发错了数据类（`LibraryData has no property for ToUi::Language`），都会打警告并丢弃。
+- **统一的下发日志**：运行前设置 `QT_LOGGING_RULES="ui.data.debug=true"`，每一次下发都会打印出来，例如 `ui.data: ToUi::ResultCount QVariant(int, 2)`。
 - **下发点看得见**：在逻辑类里搜索 `publish(` 就能列出全部下发点。
 - **唯一的例外是列表 `items`**：它是 `QAbstractItemModel`，靠 `rowsRemoved` / `rowsInserted` 增量更新，不能整体替换，所以只在启动时交给 `LibraryData` 一次（`CONSTANT`）。
 - 纯视觉的交互（展开下拉框、悬停高亮、输入框获得焦点）不上发，留在 QML 里。
@@ -281,11 +288,20 @@ classDiagram
         #lessThan()
     }
 
+    class FromUi {
+        <<上发消息表 · namespace>>
+        +Message 枚举（按模块分段）
+        +moduleOf(message) Module
+    }
+
     class UiEvents {
-        <<上发消息总线 · QML 单例>>
-        +Type 枚举（按模块分段）
-        +post(type, data) signal
-        +moduleOf(type) Module
+        <<上发入口 · QML 单例>>
+        +post(FromUi::Message, data) signal
+    }
+
+    class ToUi {
+        <<下发消息表 · namespace>>
+        +Message 枚举（按模块分段）
     }
 
     class UiDataBase {
@@ -296,15 +312,15 @@ classDiagram
 
     class LibraryData {
         <<下发数据 · QML 单例>>
-        +items : QAbstractItemModel
-        +searchText : QString
-        +category : QString
-        +categories : QVariantList
-        +resultCount : int
-        +totalCount : int
-        +emptyState : EmptyState
-        +selectedId : int
-        +selectedItem : QVariantMap
+        +toUiItems : QAbstractItemModel
+        +toUiSearchText : QString
+        +toUiCategory : QString
+        +toUiCategories : QVariantList
+        +toUiResultCount : int
+        +toUiTotalCount : int
+        +toUiEmptyState : EmptyState
+        +toUiSelectedId : int
+        +toUiSelectedItem : QVariantMap
     }
 
     class LibraryManager {
@@ -323,8 +339,8 @@ classDiagram
 
     class LanguageData {
         <<下发数据 · QML 单例>>
-        +language : QString
-        +availableLanguages : QVariantList
+        +toUiLanguage : QString
+        +toUiAvailableLanguages : QVariantList
     }
 
     class LanguageManager {
@@ -337,6 +353,8 @@ classDiagram
 
     MediaLibraryModel "1" o-- "*" MediaItem
     MediaJsonLoader ..> MediaItem : 创建
+    UiEvents ..> FromUi : 使用
+    UiDataBase ..> ToUi : 使用
     UiEvents ..> LibraryManager : post → handleUiEvent
     UiEvents ..> LanguageManager : post → handleUiEvent
     UiDataBase <|-- LibraryData
@@ -356,27 +374,28 @@ classDiagram
 | `MediaJsonLoader` | Model | 读取并校验 JSON | 和模型分开：以后换数据源只改这里；坏记录跳过并记录警告 |
 | `MediaLibraryModel` | Model | 持有全部数据，以 roles 形式暴露 | 只读；`itemById()` 给 ViewModel 取详情 |
 | `MediaFilterModel` | Model | 搜索 + 类型筛选 + 排序 | 由 `LibraryManager` 持有，View 只通过 `items` 属性拿到它 |
-| `UiEvents` | 接口层 · 上发 | 消息总线：QML 发出的全部消息 | 一个 `post(类型, 数据)` 信号 + 按模块分段的类型枚举；没有实现代码 |
+| `FromUi` / `ToUi` | 接口层 | 上发 / 下发消息表 | 两个命名空间，各一个按模块分段的 `Message` 枚举；名字就表明方向 |
+| `UiEvents` | 接口层 · 上发 | 消息总线：QML 发出的全部消息 | 只有一个 `post(消息, 数据)` 信号；消息名定义在 `FromUi.h`；没有实现代码 |
 | `UiDataBase` | 接口层 · 下发 | 数据类的基类 | 统一入口 `publish(名字, 值)`：查表调用 setter，检查类型，打下发日志 |
 | `LibraryData` | 接口层 · 下发 | 媒体库页面要显示的全部数据 | 纯数据类，`UI_PROPERTY` 宏定义；QML 只读 |
 | `LibraryManager` | 逻辑层 | 媒体库页面的界面逻辑 | 不注册到 QML；见 5.3 |
 | `LanguageData` | 接口层 · 下发 | 当前语言、可选语言 | 纯数据类；QML 只读 |
-| `LanguageManager` | 逻辑层 | 运行时切换语言 | 不注册到 QML；加载 `.qm` 后调用 `QQmlEngine::retranslate()`，下发 `language`，并发出 `languageChanged` |
+| `LanguageManager` | 逻辑层 | 运行时切换语言 | 不注册到 QML；加载 `.qm` 后调用 `QQmlEngine::retranslate()`，下发 `ToUi::Language`，并发出 `languageChanged` |
 
 ### 5.3 `LibraryData`（下发）和 `LibraryManager`（逻辑）
 
-**`LibraryData` 属性（QML 只读）**
+**`LibraryData` 属性（QML 只读，名字都带 `toUi` 前缀，表示发往 UI）**
 
 | 属性 | 类型 | 说明 | 谁下发 |
 |---|---|---|---|
-| `items` | `QAbstractItemModel*`（CONSTANT） | 过滤后的列表，ListView 直接绑定 | 构造时设置一次 |
-| `searchText` | `QString` | 搜索框文字，立即更新；**200ms 防抖**后才真正过滤 | `LibraryManager::setSearchText()` |
-| `category` | `QString` | `""` = 全部；`"Others"` = 四个主要类型以外的 | `LibraryManager::setCategory()` |
-| `categories` | `QVariantList` | 下拉框选项 `[{key, label}]`，`label` 已翻译 | `publishCategories()` |
-| `resultCount` / `totalCount` | `int` | 列表末尾的 “2 of 24 items” | `publishCounts()` |
-| `emptyState` | 枚举 `None / NoData / NoMatch` | View 据此决定显示哪种提示 | `publishCounts()` |
-| `selectedId` | `int` | 当前选中项（记 ID 不记行号），-1 = 未选中 | `select()` |
-| `selectedItem` | `QVariantMap` | 详情 `{title, creator, typeLabel, metaText, description}`，文字已格式化 | `publishSelectedItem()` |
+| `toUiItems` | `QAbstractItemModel*`（CONSTANT） | 过滤后的列表，ListView 直接绑定 | 构造时设置一次 |
+| `toUiSearchText` | `QString` | 搜索框文字，立即更新；**200ms 防抖**后才真正过滤 | `LibraryManager::setSearchText()` |
+| `toUiCategory` | `QString` | `""` = 全部；`"Others"` = 四个主要类型以外的 | `LibraryManager::setCategory()` |
+| `toUiCategories` | `QVariantList` | 下拉框选项 `[{key, label}]`，`label` 已翻译 | `publishCategories()` |
+| `toUiResultCount` / `toUiTotalCount` | `int` | 列表末尾的 “2 of 24 items” | `publishCounts()` |
+| `toUiEmptyState` | 枚举 `None / NoData / NoMatch` | View 据此决定显示哪种提示 | `publishCounts()` |
+| `toUiSelectedId` | `int` | 当前选中项（记 ID 不记行号），-1 = 未选中 | `select()` |
+| `toUiSelectedItem` | `QVariantMap` | 详情 `{title, creator, typeLabel, metaText, description}`，文字已格式化 | `publishSelectedItem()` |
 
 **`LibraryManager` 函数**
 
@@ -440,7 +459,7 @@ flowchart TB
 | `components/LibraryPane.qml` | 标题栏、搜索、筛选、计数、列表、空状态 | `resultCount`、`totalCount`、`emptyState` |
 | `components/SearchField.qml` | 搜索框、清除按钮 | `searchText`；上发 `SearchEdited` |
 | `components/TypeFilter.qml` | 带 ▾ 的下拉框，选中后高亮 | `categories`、`category`；上发 `TypeSelected` |
-| `components/LanguageSwitch.qml` | `EN \| SV` 分段按钮，当前语言橙色高亮 | `LanguageData.language`；上发 `LanguageSelected` |
+| `components/LanguageSwitch.qml` | `EN \| SV` 分段按钮，当前语言橙色高亮 | `LanguageData.toUiLanguage`；上发 `LanguageSelected` |
 | `components/MediaList.qml` / `MediaRow.qml` | 列表和每一行；搜索命中高亮 | `items`、`selectedId`；上发 `ItemClicked` |
 | `components/DetailView.qml` | 详情内容 | `selectedItem` |
 | `components/EmptyState.qml` | 无数据 / 无结果提示 | `emptyState` |
@@ -575,12 +594,13 @@ mediaLibrary/
 ├── src/
 │   ├── main.cpp                创建并组装所有对象
 │   ├── interface/              接口层：QML 只能看到这一层
-│   │   ├── UiEvents.h          上发：消息类型枚举 + post 信号
-│   │   ├── UiData.h            下发：全部下发数据的名字，按模块分段
+│   │   ├── FromUi.h            上发消息表：UI 发出的全部消息，按模块分段
+│   │   ├── UiEvents.h          上发统一入口：post 信号
+│   │   ├── ToUi.h              下发消息表：发往 UI 的全部数据，按模块分段
 │   │   ├── UiDataBase.h/.cpp   数据类的基类：统一下发入口 publish()
 │   │   ├── UiProperty.h        下发属性宏 UI_PROPERTY
-│   │   ├── LibraryData.h       媒体库下发数据（QML 只读）
-│   │   └── LanguageData.h      语言下发数据（QML 只读）
+│   │   ├── LibraryData.toUiH       媒体库下发数据（QML 只读）
+│   │   └── LanguageData.toUiH      语言下发数据（QML 只读）
 │   ├── logic/                  逻辑层：QML 看不到
 │   │   ├── LibraryManager.h/.cpp   媒体库：搜索、筛选、选中、格式化
 │   │   └── LanguageManager.h/.cpp    语言：加载翻译

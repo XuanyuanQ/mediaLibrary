@@ -3,23 +3,23 @@
 #include <QObject>
 
 /*
- * 【下发消息表】C++ → QML 的全部下发数据，名字统一在这里定义。
+ * 【下发消息表】C++ → UI（QML）的全部下发数据，名字统一在这里定义。
  *
- * 和上发的 UiEvents.h 对称：
- *   上发：UiEvents.post(UiEvents::ItemClicked, id)          消息类型定义在 UiEvents.h
- *   下发：m_data.publish(UiData::SelectedItem, detail)      消息名字定义在这里
+ * 和上发消息表 FromUi.h 对称，从名字就能看出方向：
+ *   上发：UiEvents.post(FromUi.ItemClicked, id)              FromUi = 从 UI 发出
+ *   下发：m_data.publish(ToUi::SelectedItem, detail)         ToUi   = 发往 UI
  *
  * 规则：
  *   - 用到的下发数据必须先在这里登记，没登记的名字 publish 时编译就报错
- *   - 每个名字要在对应的数据类里用 UI_PROPERTY 定义成属性，名字必须一模一样
- *     （宏里写 UiData::名字 去登记，这里没有就编译失败）
- *   - QML 里用的属性名是首字母小写的版本：ResultCount → LibraryData.resultCount
- *   - 按模块分段，和 UiEvents 的编号规则一致：媒体库 100~199，语言 200~299
+ *   - 每个名字要在对应的数据类里用 UI_PROPERTY(类型, 名字) 定义成属性，名字必须一模一样
+ *     （宏里写 ToUi::名字 去登记，这里没有就编译失败）
+ *   - QML 里的属性名 = "toUi" + 名字：ResultCount → LibraryData.toUiResultCount
+ *   - 按模块分段，和 FromUi 的编号规则一致：媒体库 100~199，语言 200~299
  */
-namespace UiData {
-Q_NAMESPACE   // 让 qDebug 能打印出名字（例如 UiData::ResultCount），方便看下发日志
+namespace ToUi {
+Q_NAMESPACE   // 让 qDebug 能打印出名字（例如 ToUi::ResultCount），方便看下发日志
 
-enum Key {
+enum Message {
     // ---- 媒体库（100~199）：LibraryManager 下发到 LibraryData ----
     SearchText = 100,   // QString       搜索框文字
     Category,           // QString       当前类型 key
@@ -34,6 +34,6 @@ enum Key {
     Language = 200,     // QString       当前语言代码："en"、"sv"
     AvailableLanguages, // QVariantList  可选语言 [{code, label}]
 };
-Q_ENUM_NS(Key)
+Q_ENUM_NS(Message)
 
-} // namespace UiData
+} // namespace ToUi

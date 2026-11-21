@@ -14,10 +14,10 @@ class MediaFilterModel;
  * 【逻辑层】媒体库页面的界面逻辑（在 MVVM 里相当于 ViewModel）。不对 QML 开放（不注册到 QML）。
  *
  * 数据流：
- *   上发：QML → UiEvents.post(类型, 数据) → main.cpp connect → handleUiEvent() → setSearchText / setCategory / select
- *   下发：这里算完结果 → m_data.publish(UiData::名字, 值) → LibraryData 发出 xxxChanged → QML 绑定刷新
+ *   上发：QML → UiEvents.post(FromUi.xxx, 数据) → main.cpp connect → handleUiEvent() → setSearchText / setCategory / select
+ *   下发：这里算完结果 → m_data.publish(ToUi::名字, 值) → LibraryData 发出 toUiXxxChanged → QML 绑定刷新
  *
- * 所有“下发”都走统一入口 publish()，名字在 UiData.h 里集中登记；搜索 "publish(" 就能看到全部下发点。
+ * 所有“下发”都走统一入口 publish()，名字在 ToUi.h 里集中登记；搜索 "publish(" 就能看到全部下发点。
  * 这个类不引用任何 QML 类型，不启动界面也能单独创建和使用。
  */
 class LibraryManager : public QObject
@@ -32,12 +32,12 @@ public:
 
     // ---- 处理上发消息 ----
     // 入口：main.cpp 把 UiEvents::post connect 到这里。只处理媒体库模块（100~199）的消息
-    void handleUiEvent(UiEvents::Type type, const QVariant &data);
+    void handleUiEvent(FromUi::Message type, const QVariant &data);
 
     // 具体处理函数（由 handleUiEvent 分发）
-    void setSearchText(const QString &text);   // ← UiEvents::SearchEdited
-    void setCategory(const QString &category); // ← UiEvents::TypeSelected
-    void select(int mediaId);                  // ← UiEvents::ItemClicked
+    void setSearchText(const QString &text);   // ← FromUi::SearchEdited
+    void setCategory(const QString &category); // ← FromUi::TypeSelected
+    void select(int mediaId);                  // ← FromUi::ItemClicked
 
 public slots:
     // 语言切换后由 main.cpp 连接的信号触发：重新下发带翻译的文字（categories、selectedItem）

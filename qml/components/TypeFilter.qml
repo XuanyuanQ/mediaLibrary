@@ -1,4 +1,4 @@
-// 类型筛选下拉框（带 ▾）：选项来自 LibraryData.categories，选中后通过 UiEvents.post(TypeSelected) 上发。
+// 类型筛选下拉框（带 ▾）：选项来自 LibraryData.toUiCategories，选中后通过 UiEvents.post(FromUi.TypeSelected) 上发。
 // 选了某个类型（不是 All types）时，边框和文字变成橙色，提示当前正在筛选
 import QtQuick
 import QtQuick.Controls
@@ -9,20 +9,20 @@ ComboBox {
     id: root
 
     // 当前是否在筛选（"" 表示全部类型）
-    readonly property bool active: LibraryData.category !== ""
+    readonly property bool active: LibraryData.toUiCategory !== ""
 
     // 选项：C++ 生成的 [{key, label}, ...]
     // textRole：显示哪个字段；valueRole：选中后 currentValue 取哪个字段
-    model: LibraryData.categories
+    model: LibraryData.toUiCategories
     textRole: "label"
     valueRole: "key"
 
     // 上发（界面 → C++）：用户选了某一项（onActivated 只响应用户操作，和搜索框的 onTextEdited 同理）。
     // 发一条 TypeSelected 消息，C++ 的 LibraryManager::handleUiEvent() 交给 setCategory()，立即重新过滤
-    onActivated: UiEvents.post(UiEvents.TypeSelected, currentValue)
+    onActivated: UiEvents.post(FromUi.TypeSelected, currentValue)
 
     // 按 C++ 里当前的 category 选中对应的一项
-    function syncCurrentIndex() { currentIndex = indexOfValue(LibraryData.category) }
+    function syncCurrentIndex() { currentIndex = indexOfValue(LibraryData.toUiCategory) }
 
     // 启动时：category 默认 ""，选中 All types
     Component.onCompleted: syncCurrentIndex()
@@ -32,7 +32,7 @@ ComboBox {
     // 用 Qt.callLater 等 ComboBox 处理完新 model 之后再选，否则会被它的重置覆盖
     Connections {
         target: LibraryData
-        function onCategoriesChanged() { Qt.callLater(root.syncCurrentIndex) }
+        function onToUiCategoriesChanged() { Qt.callLater(root.syncCurrentIndex) }
     }
 
     implicitWidth: Theme.dp(140)
@@ -74,7 +74,7 @@ ComboBox {
         required property var model
         required property int index
 
-        readonly property bool selected: model[root.valueRole] === LibraryData.category
+        readonly property bool selected: model[root.valueRole] === LibraryData.toUiCategory
 
         width: root.popup.availableWidth
         height: Theme.dp(36)

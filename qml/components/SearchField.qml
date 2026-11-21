@@ -1,4 +1,4 @@
-// 搜索框：输入内容通过 UiEvents.post(SearchEdited) 上发给 C++（防抖和过滤都在 C++ 里），
+// 搜索框：输入内容通过 UiEvents.post(FromUi.SearchEdited) 上发给 C++（防抖和过滤都在 C++ 里），
 // 右侧有清除按钮
 import QtQuick
 import QtQuick.Controls
@@ -8,15 +8,15 @@ import MediaLibrary.Core
 TextField {
     id: root
 
-    // 下发（C++ → 界面）：绑定 LibraryData 里的搜索词。
-    // C++ 的 setSearchText() 里调用 m_data.publish(UiData::SearchText, …) 下发，发出 searchTextChanged 后，
+    // 下发（C++ → 界面）：绑定 LibraryData.toUiSearchText（发往 UI 的搜索词）。
+    // C++ 的 setSearchText() 里调用 m_data.publish(ToUi::SearchText, …) 下发，发出 toUiSearchTextChanged 后，
     // QML 自动重新取值，搜索框文字随之更新（✕ 按钮清空就是靠这一行）
-    text: LibraryData.searchText
+    text: LibraryData.toUiSearchText
     // 上发（界面 → C++）：用户每打一个字，就发一条 SearchEdited 消息。
     // C++ 的 LibraryManager::handleUiEvent() 收到后交给 setSearchText()，
     // 之后的流程都在 C++：200ms 防抖 → 代理重新过滤 → 发出 rowsRemoved 等信号 → 列表更新。
     // 用 onTextEdited 而不是 onTextChanged：只响应用户输入，避免和上面的绑定互相触发
-    onTextEdited: UiEvents.post(UiEvents.SearchEdited, text)
+    onTextEdited: UiEvents.post(FromUi.SearchEdited, text)
 
     placeholderText: qsTr("Search title or creator")
     selectByMouse: true
@@ -52,7 +52,7 @@ TextField {
         palette.buttonText: Theme.textSecondary
         background: null
         onClicked: {
-            UiEvents.post(UiEvents.SearchEdited, "")
+            UiEvents.post(FromUi.SearchEdited, "")
             root.forceActiveFocus()
         }
         Accessible.name: qsTr("Clear search")

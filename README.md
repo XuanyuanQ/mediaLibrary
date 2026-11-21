@@ -24,7 +24,7 @@ cmake --build build --config Release -j 8
 
 | 目录 | 内容 |
 |---|---|
-| `src/interface/` | 接口层，QML 只能看到这一层：`UiEvents.h`（上发消息）、`UiData.h`（下发数据名字）、`UiDataBase`（统一下发入口）、`UiProperty.h`（属性宏）、`LibraryData` / `LanguageData`（下发数据） |
+| `src/interface/` | 接口层，QML 只能看到这一层：`FromUi.h`（上发消息名）、`UiEvents.h`（上发入口）、`ToUi.h`（下发数据名）、`UiDataBase`（统一下发入口）、`UiProperty.h`（属性宏）、`LibraryData` / `LanguageData`（下发数据） |
 | `src/logic/` | 逻辑层，QML 看不到：`LibraryManager`（搜索、筛选、选中）、`LanguageManager`（切换语言） |
 | `src/model/` | Model：`MediaItem`、`MediaJsonLoader`、`MediaLibraryModel`、`MediaFilterModel` |
 | `src/main.cpp` | 创建并组装所有对象，把接口对象注册成 QML 单例（`UiEvents`、`LibraryData`、`LanguageData`） |
