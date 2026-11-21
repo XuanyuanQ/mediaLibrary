@@ -17,8 +17,6 @@ QtObject {
     readonly property string monoFont: Qt.platform.os === "windows" ? "Consolas" : "monospace"
 
     // ---------- 分辨率适配 ----------
-    // 宽度达到断点后切换为双栏布局
-    readonly property int wideBreakpoint: 900
     // 缩放系数，由 Main.qml 根据窗口尺寸设置（见 ARCHITECTURE.md 第 8 节）
     property real scale: 1.0
 

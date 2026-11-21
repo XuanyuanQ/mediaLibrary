@@ -3,7 +3,7 @@
 #include "MediaFilterModel.h"
 #include "MediaLibraryModel.h"
 
-// 已实现：搜索、类型筛选、计数、空状态。待实现：选中、语言相关文字
+// 已实现：搜索、类型筛选、计数、空状态、选中和详情。待实现：语言相关文字
 
 LibraryViewModel::LibraryViewModel(MediaLibraryModel *library, QObject *parent)
     : QObject(parent)
@@ -94,13 +94,13 @@ void LibraryViewModel::setSearchDebounceInterval(int ms)
 
 void LibraryViewModel::select(int mediaId)
 {
-    // TODO: 保存 ID，rebuildSelectedItem()，发出信号
-    Q_UNUSED(mediaId)
-}
-
-void LibraryViewModel::clearSelection()
-{
-    // TODO: selectedId = -1，清空 selectedItem
+    // 谁调用：MediaRow.qml 的 onClicked: LibraryViewModel.select(root.mediaId)
+    // （Q_INVOKABLE 让 QML 可以直接调用这个函数）
+    if (m_selectedId == mediaId)
+        return;
+    m_selectedId = mediaId;
+    emit selectedIdChanged();   // MediaRow 的 selected 绑定刷新 → 被点的那一行加橙色边框
+    rebuildSelectedItem();      // 生成详情数据，并发出 selectedItemChanged → DetailView 刷新
 }
 
 void LibraryViewModel::retranslate()
@@ -136,6 +136,41 @@ void LibraryViewModel::rebuildCategories()
 
 void LibraryViewModel::rebuildSelectedItem()
 {
-    // TODO: 从 m_library->itemById(m_selectedId) 取数据，格式化 durationText、categoryLabel 等
+    // 详情页要显示的内容全部在这里准备好（包括格式化后的文字），QML 只负责摆放
+    m_selectedItem.clear();
+
+    const std::optional<MediaItem> item = m_library ? m_library->itemById(m_selectedId)
+                                                    : std::nullopt;
+    if (item) {
+        // 类型显示名：四种主要类型和有声书用翻译后的名字，其他类型直接显示原文
+        QString typeLabel = item->type;
+        if (item->type == QLatin1String("Movie"))          typeLabel = tr("Movie");
+        else if (item->type == QLatin1String("Music"))     typeLabel = tr("Music");
+        else if (item->type == QLatin1String("Ebook"))     typeLabel = tr("Book");
+        else if (item->type == QLatin1String("Podcast"))   typeLabel = tr("Podcast");
+        else if (item->type == QLatin1String("Audiobook")) typeLabel = tr("Audiobook");
+
+        // 附加信息一行：年份 · 时长（或页数），没有的项不显示。例如 "2021 · 45 min"
+        QStringList meta;
+        if (item->year > 0)
+            meta << QString::number(item->year);
+        if (item->durationSec > 0) {
+            const int minutes = (item->durationSec + 30) / 60;   // 四舍五入到分钟
+            meta << (minutes >= 60 ? tr("%1 h %2 min").arg(minutes / 60).arg(minutes % 60)
+                                   : tr("%1 min").arg(minutes));
+        }
+        if (item->pages > 0)
+            meta << tr("%1 pages").arg(item->pages);
+
+        // QML 里用 LibraryViewModel.selectedItem.title 这样的写法读取
+        m_selectedItem = {
+            {QStringLiteral("title"), item->title},
+            {QStringLiteral("creator"), item->creator},
+            {QStringLiteral("typeLabel"), typeLabel},
+            {QStringLiteral("metaText"), meta.join(QStringLiteral(" · "))},
+            {QStringLiteral("description"), item->description},
+        };
+    }
+    // 没找到（未选中）时 m_selectedItem 是空的，DetailView 据此显示“请选择”提示
     emit selectedItemChanged();
 }

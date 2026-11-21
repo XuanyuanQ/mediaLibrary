@@ -1,5 +1,4 @@
 // 列表面板：标题栏 + 语言切换、搜索框 + 类型下拉、列表（末尾显示计数）、空状态。
-// 宽屏和窄屏布局复用同一份。
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts

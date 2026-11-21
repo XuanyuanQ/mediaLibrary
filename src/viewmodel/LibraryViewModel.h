@@ -17,7 +17,6 @@ class MediaFilterModel;
  *   2. 把用户操作转成对这里的调用（searchText = …、select(id) …）
  *
  * 这个类不引用任何 QML 类型，可以直接在单元测试里 new 出来测试。
- * 宽屏、窄屏两种布局共用同一个实例，所以切换布局时状态不会丢。
  *
  * 普通类。main.cpp 创建对象后用 qmlRegisterSingletonInstance 注册成 QML 单例，
  * QML 里 import MediaLibrary.Core 之后直接写 LibraryViewModel.xxx。
@@ -89,7 +88,6 @@ public:
 
     // ---- 供 View 调用的操作 ----
     Q_INVOKABLE void select(int mediaId);
-    Q_INVOKABLE void clearSelection();
 
 public slots:
     // 语言切换后由 main.cpp 连接的信号触发：重建 categories 和 selectedItem 的显示文字

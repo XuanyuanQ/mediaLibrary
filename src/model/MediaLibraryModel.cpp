@@ -1,6 +1,6 @@
 #include "MediaLibraryModel.h"
 
-// itemById() 供详情页使用，待实现
+// itemById()：按 ID 查完整记录，供 LibraryViewModel 生成详情
 
 MediaLibraryModel::MediaLibraryModel(QObject *parent)
     : QAbstractListModel(parent)
@@ -72,7 +72,10 @@ void MediaLibraryModel::setItems(const QList<MediaItem> &items)
 
 std::optional<MediaItem> MediaLibraryModel::itemById(int id) const
 {
-    // TODO: 按 id 查找
-    Q_UNUSED(id)
-    return std::nullopt;
+    // 逐条比较 ID。只有 24 条数据，线性查找足够；数据量大时可以改成 QHash<id, 行号>
+    for (const MediaItem &item : m_items) {
+        if (item.id == id)
+            return item;
+    }
+    return std::nullopt;   // 没找到（例如 id = -1 表示未选中）
 }

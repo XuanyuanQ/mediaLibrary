@@ -20,7 +20,7 @@ private slots:
     }
 
     void debounceAppliesSearchOnce()          { QSKIP("Not implemented yet"); }
-    void selectAndClearSelection()            { QSKIP("Not implemented yet"); }
+    void selectBuildsSelectedItem()          { QSKIP("Not implemented yet"); }
     void selectionSurvivesFiltering()         { QSKIP("Not implemented yet"); }
     void emptyStateNoData()                   { QSKIP("Not implemented yet"); }
     void emptyStateNoMatch()                  { QSKIP("Not implemented yet"); }

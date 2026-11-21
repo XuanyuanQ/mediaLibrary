@@ -11,7 +11,7 @@ Rectangle {
     property string hint        // 绑定 / 调用说明
     default property alias content: inner.data   // 可以在占位框里再放子组件
 
-    // 宽度按文字撑开，但最多 220，避免在窄屏上把整行撑出窗口
+    // 宽度按文字撑开，但最多 220，避免把整行撑出窗口
     implicitWidth: Math.min(Math.max(label.implicitWidth, hintLabel.implicitWidth) + Theme.dp(16),
                             Theme.dp(220))
     implicitHeight: Theme.dp(48)

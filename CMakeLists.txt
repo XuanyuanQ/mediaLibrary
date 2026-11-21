@@ -71,7 +71,6 @@ qt_add_qml_module(appMediaLibrary
         qml/Theme.qml
         qml/MediaUtils.js
         qml/layouts/WideLayout.qml
-        qml/layouts/NarrowLayout.qml
         qml/components/LibraryPane.qml
         qml/components/DetailView.qml
         qml/components/SearchField.qml
