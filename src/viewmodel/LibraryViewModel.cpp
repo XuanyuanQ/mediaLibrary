@@ -3,7 +3,7 @@
 #include "MediaFilterModel.h"
 #include "MediaLibraryModel.h"
 
-// 已实现：搜索、类型筛选、计数。待实现：选中、空状态、语言相关文字
+// 已实现：搜索、类型筛选、计数、空状态。待实现：选中、语言相关文字
 
 LibraryViewModel::LibraryViewModel(MediaLibraryModel *library, QObject *parent)
     : QObject(parent)
@@ -78,7 +78,12 @@ int LibraryViewModel::getTotalCount() const
 
 LibraryViewModel::EmptyState LibraryViewModel::getEmptyState() const
 {
-    // TODO: getTotalCount()==0 -> NoData；getResultCount()==0 -> NoMatch；否则 None
+    // 先判断库是不是空的：库空时结果数也是 0，但原因不是“没匹配到”
+    if (getTotalCount() == 0)
+        return NoData;
+    // 库里有数据，但搜索 / 类型筛选之后一行都不剩
+    if (getResultCount() == 0)
+        return NoMatch;
     return None;
 }
 
