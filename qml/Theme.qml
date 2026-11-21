@@ -1,4 +1,4 @@
-// 全局主题（单例）：颜色、字体、尺寸缩放都集中在这里。
+// 全局主题（单例）：颜色、字体、尺寸都集中在这里。
 // 风格：深色编辑风（接近纯黑底、白色粗体标题、等宽大写小标签、橙色强调）。
 pragma Singleton
 import QtQuick
@@ -16,15 +16,9 @@ QtObject {
     // ---------- 字体 ----------
     readonly property string monoFont: Qt.platform.os === "windows" ? "Consolas" : "monospace"
 
-    // ---------- 分辨率适配 ----------
-    // 缩放系数，由 Main.qml 根据窗口尺寸设置（见 ARCHITECTURE.md 第 8 节）
-    property real scale: 1.0
-
-    // 字号和尺寸统一通过这两个函数换算，不直接写死像素值
-    function sp(px) { return Math.round(px * scale) }   // 字号
-    function dp(px) { return Math.round(px * scale) }   // 间距、尺寸
-
-    // TODO: 按类型返回颜色和图标
-    function typeColor(type) { return surfaceRaised }
-    function typeGlyph(type) { return "•" }
+    // ---------- 尺寸 ----------
+    // 字号和尺寸统一通过这两个函数写（目前按固定像素，不随窗口缩放）。
+    // 以后要做分辨率适配，只需在这里乘一个缩放系数，所有组件不用改
+    function sp(px) { return px }   // 字号
+    function dp(px) { return px }   // 间距、尺寸
 }

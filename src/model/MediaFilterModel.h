@@ -4,20 +4,19 @@
 #include <QStringList>
 
 /*
- * 【Model 层】过滤 + 排序代理模型。由 LibraryManager 持有，QML 通过 LibraryData.items 拿到它。
+ * 【Model 层】过滤代理模型（只做过滤，不排序，保持 media.json 里的原始顺序）。由 LibraryManager 持有，QML 通过 LibraryData.items 拿到它。
  *
  * 包在 MediaLibraryModel 外面，本身不存数据，只决定：
  *   - 哪些行可见 -> filterAcceptsRow()
- *   - 行的顺序   -> lessThan()
  *
- * 由 LibraryManager 持有和控制，界面通过 LibraryManager::items 拿到它，
+ * 由 LibraryManager 持有和控制，界面通过 LibraryData.toUiItems 拿到它，
  * 不直接设置它的属性。所以这里不需要注册成 QML 类型，也不需要 Q_PROPERTY。
  *
  * 继承自 QSortFilterProxyModel，以下函数没有重写，直接用 Qt 的现成实现：
  *   - roleNames()：原样返回源模型（MediaLibraryModel）的 roleNames()
  *   - data()     ：先把“代理的行号”换算成“源模型的行号”，再调用源模型的 data()
  *   - rowCount() ：返回过滤后剩下的行数（不是源模型的行数）
- * 我们只重写 filterAcceptsRow()（决定哪些行显示）和 lessThan()（决定顺序）。
+ * 我们只重写 filterAcceptsRow()（决定哪些行显示）。
  */
 class MediaFilterModel : public QSortFilterProxyModel
 {
@@ -40,7 +39,6 @@ public:
 
 protected:
     bool filterAcceptsRow(int sourceRow, const QModelIndex &sourceParent) const override;
-    bool lessThan(const QModelIndex &left, const QModelIndex &right) const override;
 
 private:
     QString m_searchText;

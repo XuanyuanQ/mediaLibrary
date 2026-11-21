@@ -17,7 +17,7 @@
 | 题目必做 | 技术要求 | 界面用 QML，数据模型用 C++ |
 | 加分项 | 类型筛选 | 下拉框：All / Movies / Music / Books / Podcasts / Others |
 | 加分项 | 语言切换 | 英文、瑞典语**运行时**切换，不需要重启 |
-| 加分项 | 分辨率适配 | 只做横屏（车机、桌面）：左列表 + 右详情，字号和间距随窗口缩放 |
+| 加分项 | 布局 | 只做横屏（车机、桌面）：左列表 + 右详情 |
 
 **刻意不做**：播放、收藏和文件夹、数据持久化、在线数据源、单元测试（题目未要求）。这些写在 README 的“后续改进”部分。
 
@@ -48,7 +48,7 @@ flowchart TB
         Main["Main.qml<br/>窗口"]
         Layouts["WideLayout<br/>左列表 + 右详情"]
         Comps["组件<br/>SearchField · TypeFilter · LanguageSwitch<br/>MediaList · MediaRow · DetailView · EmptyState"]
-        Theme["Theme 单例<br/>颜色 · 字体 · 缩放"]
+        Theme["Theme 单例<br/>颜色 · 字体 · 尺寸"]
         Main --> Layouts --> Comps
         Comps -. 使用 .-> Theme
     end
@@ -262,7 +262,6 @@ classDiagram
         +setSearchText(text)
         +setCategory(key)
         #filterAcceptsRow()
-        #lessThan()
     }
 
     class FromUi {
@@ -350,7 +349,7 @@ classDiagram
 | `MediaItem` | Model | 一条媒体记录 | 纯数据结构 |
 | `MediaJsonLoader` | Model | 读取并校验 JSON | 和模型分开：以后换数据源只改这里；坏记录跳过并记录警告 |
 | `MediaLibraryModel` | Model | 持有全部数据，以 roles 形式暴露 | 只读；`itemById()` 给 ViewModel 取详情 |
-| `MediaFilterModel` | Model | 搜索 + 类型筛选 + 排序 | 由 `LibraryManager` 持有，View 只通过 `items` 属性拿到它 |
+| `MediaFilterModel` | Model | 搜索 + 类型筛选（不排序，保持数据原始顺序） | 由 `LibraryManager` 持有，View 只通过 `items` 属性拿到它 |
 | `FromUi` / `ToUi` | 接口层 | 上发 / 下发消息表 | 两个命名空间，各一个按模块分段的 `Message` 枚举；名字就表明方向 |
 | `UiEvents` | 接口层 · 上发 | 消息总线：QML 发出的全部消息 | 只有一个 `post(消息, 数据)` 信号；消息名定义在 `FromUi.h`；没有实现代码 |
 | `UiDataBase` | 接口层 · 下发 | 数据类的基类 | 统一入口 `publish(名字, 值)`：查表调用 setter，检查类型，打下发日志 |
@@ -431,13 +430,13 @@ flowchart TB
 | 文件 | 职责 | 绑定 / 调用 |
 |---|---|---|
 | `Main.qml` | 窗口；放置 WideLayout | — |
-| `Theme.qml` | 单例：颜色、字体、间距、`scale` | — |
+| `Theme.qml` | 单例：颜色、字体、尺寸 | — |
 | `layouts/WideLayout.qml` | 左列表、右详情 | — |
 | `components/LibraryPane.qml` | 标题栏、搜索、筛选、计数、列表、空状态 | `resultCount`、`totalCount`、`emptyState` |
 | `components/SearchField.qml` | 搜索框、清除按钮 | `searchText`；上发 `SearchEdited` |
 | `components/TypeFilter.qml` | 带 ▾ 的下拉框，选中后高亮 | `categories`、`category`；上发 `TypeSelected` |
 | `components/LanguageSwitch.qml` | `EN \| SV` 分段按钮，当前语言橙色高亮 | `LanguageData.toUiLanguage`；上发 `LanguageSelected` |
-| `components/MediaList.qml` / `MediaRow.qml` | 列表和每一行；搜索命中高亮 | `items`、`selectedId`；上发 `ItemClicked` |
+| `components/MediaList.qml` / `MediaRow.qml` | 列表和每一行；列表末尾显示计数 | `items`、`selectedId`；上发 `ItemClicked` |
 | `components/DetailView.qml` | 详情内容 | `selectedItem` |
 | `components/EmptyState.qml` | 无数据 / 无结果提示 | `emptyState` |
 
@@ -540,19 +539,12 @@ sequenceDiagram
 
 ---
 
-## 8. 分辨率适配
+## 8. 布局
 
 只做横屏：左列表（约 42%）+ 右详情，适用于车机横屏 1920×720、桌面。窗口最小宽度 900，再窄两栏就挤不下了。
 
-`Theme.scale` 根据窗口尺寸计算，所有字号和间距都乘以它：
-
-```text
-scale = clamp( min(width / 基准宽, height / 基准高), 0.85, 1.6 )
-基准：1280×720
-```
-
-- 文字和间距统一写成 `Theme.sp(16)`、`Theme.dp(12)`，不直接写死像素值。
-- 可点击区域最小 `Theme.dp(48)`，方便车机上触控。
+- 字号和间距统一写成 `Theme.sp(16)`、`Theme.dp(12)`，目前就是固定像素，不随窗口缩放。
+- 以后要做分辨率适配，只需在 `Theme.qml` 的这两个函数里乘一个缩放系数，组件代码不用改。
 
 ---
 
@@ -589,7 +581,6 @@ mediaLibrary/
 ├── qml/
 │   ├── Main.qml
 │   ├── Theme.qml
-│   ├── MediaUtils.js           只放纯显示工具：搜索命中高亮、HTML 转义
 │   ├── layouts/
 │   │   └── WideLayout.qml
 │   └── components/
@@ -638,5 +629,5 @@ flowchart LR
 | 搜索防抖放在 ViewModel 里 | 是界面逻辑而不是界面样式 |
 | 显示文字在 ViewModel 里格式化 | View 不拼字符串；各语言的格式由同一处负责 |
 | 用 `QSortFilterProxyModel` 过滤 | 源数据不变，只刷新变化的行，性能好 |
-| 选中项记 ID 不记行号 | 搜索、排序后行号会变 |
+| 选中项记 ID 不记行号 | 搜索、筛选后行号会变 |
 | 不做持久化和收藏 | 控制范围，专注题目要求 + 工程质量 |

@@ -2,12 +2,11 @@
 
 #include "MediaLibraryModel.h"
 
-// 已实现：搜索（按标题或创作者）、类型筛选。待实现：排序
+// 搜索（按标题或创作者）、类型筛选
 
 MediaFilterModel::MediaFilterModel(QObject *parent)
     : QSortFilterProxyModel(parent)
 {
-    // TODO: setDynamicSortFilter(true); 设置源模型后 sort(0)
 }
 
 void MediaFilterModel::setSearchText(const QString &text)
@@ -109,10 +108,4 @@ bool MediaFilterModel::filterAcceptsRow(int sourceRow, const QModelIndex &source
             return false;
     }
     return true;
-}
-
-bool MediaFilterModel::lessThan(const QModelIndex &left, const QModelIndex &right) const
-{
-    // TODO: 按标题 localeAwareCompare 排序
-    return QSortFilterProxyModel::lessThan(left, right);
 }

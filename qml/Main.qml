@@ -15,14 +15,6 @@ ApplicationWindow {
     title: qsTr("Media Library")
     color: Theme.background
 
-    // 分辨率适配：根据窗口尺寸计算缩放系数（基准 1280×720）
-    // TODO: 按 ARCHITECTURE.md 第 8 节实现 clamp 计算
-    Binding {
-        target: Theme
-        property: "scale"
-        value: 1.0
-    }
-
     WideLayout {
         anchors.fill: parent
     }

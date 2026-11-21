@@ -70,7 +70,6 @@ qt_add_qml_module(appMediaLibrary
     QML_FILES
         qml/Main.qml
         qml/Theme.qml
-        qml/MediaUtils.js
         qml/layouts/WideLayout.qml
         qml/components/LibraryPane.qml
         qml/components/DetailView.qml
