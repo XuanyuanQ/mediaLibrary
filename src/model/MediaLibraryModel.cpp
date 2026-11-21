@@ -1,6 +1,6 @@
 #include "MediaLibraryModel.h"
 
-// 骨架阶段：模型的基础结构已就绪，data()/setItems()/itemById() 待实现
+// itemById() 供详情页使用，待实现
 
 MediaLibraryModel::MediaLibraryModel(QObject *parent)
     : QAbstractListModel(parent)
@@ -15,10 +15,21 @@ int MediaLibraryModel::rowCount(const QModelIndex &parent) const
 
 QVariant MediaLibraryModel::data(const QModelIndex &index, int role) const
 {
-    // TODO: 按 role 返回 m_items[index.row()] 的对应字段
-    Q_UNUSED(index)
-    Q_UNUSED(role)
-    return {};
+    // 视图可能传来越界或无效的索引，先检查
+    if (!index.isValid() || index.row() < 0 || index.row() >= m_items.size())
+        return {};
+
+    // 按角色（role）返回这一行的某个字段；QML 委托里的 title、creator 等就是从这里取的
+    const MediaItem &item = m_items.at(index.row());
+    switch (role) {
+    case Qt::DisplayRole:   // 默认显示角色也返回标题，方便调试和通用视图
+    case TitleRole:   return item.title;
+    case IdRole:      return item.id;
+    case CreatorRole: return item.creator;
+    case TypeRole:    return item.type;
+    case YearRole:    return item.year;
+    default:          return {};
+    }
 }
 
 QHash<int, QByteArray> MediaLibraryModel::roleNames() const
@@ -35,8 +46,11 @@ QHash<int, QByteArray> MediaLibraryModel::roleNames() const
 
 void MediaLibraryModel::setItems(const QList<MediaItem> &items)
 {
-    // TODO: beginResetModel(); m_items = items; endResetModel(); emit countChanged();
-    Q_UNUSED(items)
+    // 整体替换数据：begin/endResetModel 通知所有视图“数据全换了，请重新读取”
+    beginResetModel();
+    m_items = items;
+    endResetModel();
+    emit countChanged();
 }
 
 std::optional<MediaItem> MediaLibraryModel::itemById(int id) const
