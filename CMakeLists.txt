@@ -28,34 +28,37 @@ if(MSVC AND EXISTS "${QT6_INSTALL_PREFIX}/lib/libQt6Core.a")
 endif()
 
 # =============================================================================
-# 1. mediacore：C++ 逻辑静态库（Model / ViewModel / Service）
+# 1. mediacore：C++ 静态库（接口层 / 逻辑层 / Model），目录和 ARCHITECTURE.md 的分层图一一对应
 # =============================================================================
 # 普通静态库，逻辑和界面分开编译（以后补单元测试时可以直接链接它，不用启动界面）。
-# 交给 QML 的方式：main.cpp 里用 qmlRegisterSingletonInstance 把对象注册成单例
-# （模块名 MediaLibrary.Core），QML 里 import MediaLibrary.Core 之后直接写 LibraryViewModel.xxx。
+# 交给 QML 的方式：main.cpp 里用 qmlRegisterSingletonInstance 把接口层对象注册成单例
+# （模块名 MediaLibrary.Core），QML 里写 UiEvents.post(...)、LibraryData.xxx。
 qt_add_library(mediacore STATIC
-    # 接口层：QML 和 C++ 之间的上下行通道
+    # 接口层：QML 只能看到这一层（上发 UiEvents，下发 LibraryData / LanguageData）
     src/interface/UiEvents.h           # 上发：消息类型 + post 信号
     src/interface/UiData.h             # 下发：全部下发数据的名字
     src/interface/UiDataBase.h         src/interface/UiDataBase.cpp   # 下发统一入口 publish()
     src/interface/UiProperty.h         # 下发属性宏 UI_PROPERTY
+    src/interface/LibraryData.h        # 媒体库下发数据（QML 只读）
+    src/interface/LanguageData.h       # 语言下发数据（QML 只读）
+
+    # 逻辑层：QML 看不到；处理上发消息，计算后 publish 下发
+    src/logic/LibraryViewModel.h       src/logic/LibraryViewModel.cpp
+    src/logic/LanguageManager.h        src/logic/LanguageManager.cpp
+
+    # Model：数据本身
     src/model/MediaItem.h
     src/model/MediaJsonLoader.h        src/model/MediaJsonLoader.cpp
     src/model/MediaLibraryModel.h      src/model/MediaLibraryModel.cpp
-    src/viewmodel/MediaFilterModel.h   src/viewmodel/MediaFilterModel.cpp
-    src/viewmodel/LibraryData.h        # 下发数据类（QML 只读）
-    src/viewmodel/LibraryViewModel.h   src/viewmodel/LibraryViewModel.cpp
-    src/services/LanguageData.h        # 下发数据类（QML 只读）
-    src/services/LanguageManager.h     src/services/LanguageManager.cpp
+    src/model/MediaFilterModel.h       src/model/MediaFilterModel.cpp
 )
 
 # 头文件按层分目录，include 时直接写文件名即可（例如 #include "LibraryViewModel.h"）
 target_include_directories(mediacore PUBLIC
     src
     src/interface
+    src/logic
     src/model
-    src/viewmodel
-    src/services
 )
 
 target_link_libraries(mediacore PUBLIC Qt6::Core Qt6::Qml)
@@ -84,8 +87,6 @@ qt_add_qml_module(appMediaLibrary
         qml/components/MediaList.qml
         qml/components/MediaRow.qml
         qml/components/EmptyState.qml
-        qml/components/CoverArt.qml
-        qml/components/Placeholder.qml   # 骨架阶段的占位框，实现完成后删除
     RESOURCES
         data/media.json
 )
@@ -104,9 +105,13 @@ set_target_properties(appMediaLibrary PROPERTIES
 
 # 翻译：构建时自动 lrelease，把 .qm 打包到资源 :/i18n/ 下。
 # 更新翻译源文件（扫描 qsTr/tr）：cmake --build <build目录> --target update_translations，
-# 然后用 Qt Linguist 打开 i18n/medialibrary_zh_CN.ts 填写译文。
+# 然后用 Qt Linguist 打开 i18n/*.ts 填写译文。英文是源语言，不需要 .ts。
+# SOURCE_TARGETS：除了界面（QML、main.cpp），还要扫描 mediacore 里 C++ 的 tr()
 qt_add_translations(appMediaLibrary
-    TS_FILES i18n/medialibrary_zh_CN.ts
+    SOURCE_TARGETS appMediaLibrary mediacore
+    TS_FILES
+        i18n/medialibrary_zh_CN.ts   # 简体中文
+        i18n/medialibrary_sv.ts      # 瑞典语
     RESOURCE_PREFIX /i18n
 )
 

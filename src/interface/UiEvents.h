@@ -37,12 +37,12 @@ public:
     // 消息类型。注释里写明 data 的类型，处理函数会检查，类型不对打警告
     enum Type {
         // ---- 媒体库（100~199），LibraryViewModel 处理 ----
-        SearchEdited = 100,   // data: QString 搜索框文字（输入、Esc、✕ 清空）     ← SearchField.qml
+        SearchEdited = 100,   // data: QString 搜索框文字（输入、✕ 清空）     ← SearchField.qml
         TypeSelected,         // data: QString 类型 key（""、"Movie"、"Others" …）  ← TypeFilter.qml
         ItemClicked,          // data: int     被点击那一项的 ID                    ← MediaRow.qml
 
         // ---- 语言（200~299），LanguageManager 处理 ----
-        LanguageSelected = 200,   // data: QString 语言代码（"en"、"zh_CN"）       ← LanguageSwitch.qml
+        LanguageSelected = 200,   // data: QString 语言代码（"en"、"zh_CN"、"sv"）       ← LanguageSwitch.qml
     };
     Q_ENUM(Type)
 

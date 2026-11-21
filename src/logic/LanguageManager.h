@@ -10,7 +10,7 @@
 class QQmlEngine;
 
 /*
- * 【Service 层】运行时切换界面语言。
+ * 【逻辑层 · Service】运行时切换界面语言。不对 QML 开放（不注册到 QML）。
  *
  * 切换流程：卸载旧翻译 -> 加载 :/i18n/medialibrary_<code>.qm -> 安装 ->
  *           QQmlEngine::retranslate()（所有 qsTr() 自动刷新）-> 发出 languageChanged

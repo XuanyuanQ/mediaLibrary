@@ -21,8 +21,19 @@ ComboBox {
     // 发一条 TypeSelected 消息，C++ 的 LibraryViewModel::handleUiEvent() 交给 setCategory()，立即重新过滤
     onActivated: UiEvents.post(UiEvents.TypeSelected, currentValue)
 
-    // 启动时：按 C++ 里当前的 category（默认 ""）选中对应的一项（All types）
-    Component.onCompleted: currentIndex = indexOfValue(LibraryData.category)
+    // 按 C++ 里当前的 category 选中对应的一项
+    function syncCurrentIndex() { currentIndex = indexOfValue(LibraryData.category) }
+
+    // 启动时：category 默认 ""，选中 All types
+    Component.onCompleted: syncCurrentIndex()
+
+    // 切换语言时：C++ 会重新下发 categories（label 换成新语言），ComboBox 换了 model 后会回到第 0 项，
+    // 但当前筛选并没有变，所以要按 category 重新选回原来那一项。
+    // 用 Qt.callLater 等 ComboBox 处理完新 model 之后再选，否则会被它的重置覆盖
+    Connections {
+        target: LibraryData
+        function onCategoriesChanged() { Qt.callLater(root.syncCurrentIndex) }
+    }
 
     implicitWidth: Theme.dp(140)
     implicitHeight: Theme.dp(40)

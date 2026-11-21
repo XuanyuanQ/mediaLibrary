@@ -4,7 +4,7 @@
 #include <QStringList>
 
 /*
- * 【ViewModel 内部】过滤 + 排序代理模型。
+ * 【Model 层】过滤 + 排序代理模型。由 LibraryViewModel 持有，QML 通过 LibraryData.items 拿到它。
  *
  * 包在 MediaLibraryModel 外面，本身不存数据，只决定：
  *   - 哪些行可见 -> filterAcceptsRow()

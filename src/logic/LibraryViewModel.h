@@ -11,7 +11,7 @@ class MediaLibraryModel;
 class MediaFilterModel;
 
 /*
- * 【ViewModel 层 · 逻辑】媒体库页面的界面逻辑。不对 QML 开放（不注册到 QML）。
+ * 【逻辑层 · ViewModel】媒体库页面的界面逻辑。不对 QML 开放（不注册到 QML）。
  *
  * 数据流：
  *   上发：QML → UiEvents.post(类型, 数据) → main.cpp connect → handleUiEvent() → setSearchText / setCategory / select

@@ -2,7 +2,7 @@
 
 Qt 6 / QML 媒体库浏览器，MVVM 架构。架构说明见 [ARCHITECTURE.md](ARCHITECTURE.md)（浏览器打开 [ARCHITECTURE.html](ARCHITECTURE.html) 可以看到渲染好的图）。
 
-> **当前状态：** 列表显示、按标题或创作者搜索、类型筛选、点击查看详情、无结果提示已完成；语言切换、分辨率缩放、封面图等还在进行中（代码里标 `TODO` 的地方）。
+> **当前状态：** 列表显示、按标题或创作者搜索、类型筛选、点击查看详情、无结果提示、语言切换（英文 / 简体中文 / 瑞典语）已完成；分辨率缩放还在进行中（代码里标 `TODO` 的地方）。
 
 ## 构建和运行
 
@@ -38,14 +38,13 @@ cmake --build build --config Release -j 8
 
 | 目录 | 内容 |
 |---|---|
-| `src/model/` | Model：`MediaItem`、`MediaJsonLoader`、`MediaLibraryModel` |
-| `src/interface/` | 接口层（QML 和 C++ 之间的上下行通道）：`UiEvents.h`（上发消息）、`UiData.h`（下发数据名字）、`UiDataBase`（统一下发入口）、`UiProperty.h`（属性宏） |
-| `src/viewmodel/` | ViewModel：`LibraryViewModel`（逻辑）、`LibraryData`（下发数据）、`MediaFilterModel` |
-| `src/services/` | Service：`LanguageManager`（逻辑）、`LanguageData`（下发数据） |
+| `src/interface/` | 接口层，QML 只能看到这一层：`UiEvents.h`（上发消息）、`UiData.h`（下发数据名字）、`UiDataBase`（统一下发入口）、`UiProperty.h`（属性宏）、`LibraryData` / `LanguageData`（下发数据） |
+| `src/logic/` | 逻辑层，QML 看不到：`LibraryViewModel`（搜索、筛选、选中）、`LanguageManager`（切换语言） |
+| `src/model/` | Model：`MediaItem`、`MediaJsonLoader`、`MediaLibraryModel`、`MediaFilterModel` |
 | `src/main.cpp` | 创建并组装所有对象，把接口对象注册成 QML 单例（`UiEvents`、`LibraryData`、`LanguageData`） |
 | `qml/` | View：`Main.qml`、`Theme.qml`、`layouts/`、`components/` |
 | `data/` | mock 数据 |
-| `i18n/` | 翻译源文件（`.ts`） |
+| `i18n/` | 翻译源文件：`medialibrary_zh_CN.ts`（简体中文）、`medialibrary_sv.ts`（瑞典语）；英文是源语言 |
 
 ## 后续改进
 

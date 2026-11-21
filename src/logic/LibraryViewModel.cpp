@@ -83,7 +83,7 @@ void LibraryViewModel::setSearchText(const QString &text)
     // 谁调用：handleUiEvent() 收到 SearchEdited（来自 SearchField.qml）
     if (m_data.getSearchText() == text)
         return;
-    m_data.publish(UiData::SearchText, text);   // 下发：搜索框文字立即更新（✕、Esc 清空就是靠它把框清空）
+    m_data.publish(UiData::SearchText, text);   // 下发：搜索框文字立即更新（✕ 清空就是靠它把框清空）
     m_searchDebounce.start();     // 过滤要等停止输入 200ms 后再做（重新开始计时）
 }
 

@@ -31,7 +31,7 @@ enum Key {
     SelectedItem,       // QVariantMap   详情 {title, creator, typeLabel, metaText, description}
 
     // ---- 语言（200~299）：LanguageManager 下发到 LanguageData ----
-    Language = 200,     // QString       当前语言代码
+    Language = 200,     // QString       当前语言代码："en"、"zh_CN"、"sv"
     AvailableLanguages, // QVariantList  可选语言 [{code, label}]
 };
 Q_ENUM_NS(Key)

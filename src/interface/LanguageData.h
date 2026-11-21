@@ -20,6 +20,6 @@ class LanguageData : public UiDataBase
 public:
     using UiDataBase::UiDataBase;
 
-    UI_PROPERTY(QString, language, Language)                          // 当前语言代码："en"、"zh_CN"
+    UI_PROPERTY(QString, language, Language)                          // 当前语言代码："en"、"zh_CN"、"sv"
     UI_PROPERTY(QVariantList, availableLanguages, AvailableLanguages) // 可选语言 [{code, label}]
 };
