@@ -1,4 +1,4 @@
-// 列表面板：标题栏 + 语言切换、搜索框 + 类型下拉、列表（末尾显示计数）、空状态。
+// Left pane: title, language switch, search, type filter, list and empty state.
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
@@ -13,7 +13,7 @@ Item {
         anchors.margins: Theme.dp(16)
         spacing: Theme.dp(10)
 
-        // 标题栏
+        // Header
         RowLayout {
             Layout.fillWidth: true
             Label {
@@ -27,7 +27,7 @@ Item {
             LanguageSwitch { }
         }
 
-        // 搜索 + 筛选
+        // Search and filter
         RowLayout {
             Layout.fillWidth: true
             spacing: Theme.dp(8)
@@ -37,7 +37,7 @@ Item {
             TypeFilter { }
         }
 
-        // 列表 + 空状态（叠放）
+        // List with the empty-state message on top
         Item {
             Layout.fillWidth: true
             Layout.fillHeight: true

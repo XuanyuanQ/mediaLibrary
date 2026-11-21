@@ -7,13 +7,8 @@
 #include "MediaItem.h"
 
 /*
- * 【Model 层】全部媒体数据（只读）。
- *
- * 继承 QAbstractListModel：ListView 通过 rowCount()/data()/roleNames() 读取数据，
- * 委托里可以直接写 title、creator 等字段名。
- *
- * 由 main.cpp 创建并填充数据。
- * 界面不直接使用它：ListView 绑定的是 LibraryManager::items（过滤后的代理模型）。
+ * All media items as a list model. Filled by main.cpp.
+ * The UI does not use it directly: ListView shows MediaFilterModel, which wraps this model.
  */
 class MediaLibraryModel : public QAbstractListModel
 {
@@ -22,7 +17,7 @@ class MediaLibraryModel : public QAbstractListModel
     Q_PROPERTY(int count READ getCount NOTIFY countChanged)
 
 public:
-    // 自定义角色从 Qt::UserRole + 1 开始，避免和 Qt 内置角色冲突
+    // Custom roles start after Qt::UserRole to avoid Qt's built-in roles
     enum Roles {
         IdRole = Qt::UserRole + 1,
         TitleRole,
@@ -34,17 +29,16 @@ public:
 
     explicit MediaLibraryModel(QObject *parent = nullptr);
 
-    // ---- QAbstractListModel 接口 ----
     int rowCount(const QModelIndex &parent = QModelIndex()) const override;
     QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const override;
     QHash<int, QByteArray> roleNames() const override;
 
     int getCount() const { return int(m_items.size()); }
 
-    // 整体替换数据（main.cpp 加载完 JSON 后调用）
+    // Replaces all items
     void setItems(const QList<MediaItem> &items);
 
-    // 按 ID 查完整记录，供 ViewModel 生成详情；找不到返回 std::nullopt
+    // Full record for the detail view; std::nullopt if not found
     std::optional<MediaItem> itemById(int id) const;
 
 signals:

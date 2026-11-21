@@ -1,5 +1,5 @@
-// 空状态提示：列表里一行都没有时，在列表中间显示两行文字（原因 + 计数）。
-// 显示 / 隐藏由 LibraryPane 控制（emptyState 不是 None 时显示）
+// Shown in the middle of the list when it is empty: reason and count.
+// Visibility is controlled by LibraryPane.
 import QtQuick
 import QtQuick.Controls
 import MediaLibrary
@@ -8,10 +8,7 @@ import MediaLibrary.Core
 Column {
     spacing: Theme.dp(6)
 
-    // emptyState 由 C++ 的 LibraryManager::publishCounts() 算好后下发：
-    //   NoMatch：有数据，但搜索 / 筛选后没有匹配项
-    //   NoData： 媒体库本身是空的（或 media.json 加载失败）
-    // 每次结果行数变化，C++ 都会发出 toUiEmptyStateChanged，这里的文字自动更新
+    // NoMatch: library has data but nothing matches. NoData: library is empty.
     Label {
         anchors.horizontalCenter: parent.horizontalCenter
         text: LibraryData.toUiEmptyState === LibraryData.NoMatch
@@ -21,7 +18,7 @@ Column {
         font.pixelSize: Theme.sp(15)
     }
 
-    // 计数：例如 “0 of 24 items”，说明库里其实有 24 个，只是当前搜索 / 筛选一个都没匹配到
+    // e.g. "0 of 24 items": the library has data, the search just found nothing
     Label {
         anchors.horizontalCenter: parent.horizontalCenter
         text: qsTr("%1 of %2 items").arg(LibraryData.toUiResultCount).arg(LibraryData.toUiTotalCount)

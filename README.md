@@ -45,4 +45,16 @@ cmake --build build --config Release -j 8
 | `LibraryManager` | 发 `UiEvents` 消息后 `LibraryData` 的值是否正确：搜索防抖（连续输入只过滤一次）；选中后详情的格式化文字；`emptyState` 三种情况；计数 |
 | `UiDataBase` | `publish()` 类型不对、发错数据类时丢弃并警告；值没变时不发信号 |
 
+**后台加载数据（数据量变大时）**
+
+这一版没有用线程：数据只有 24 条，而且编在程序资源里，加载和过滤都是微秒级，不会卡住界面，加线程只会增加复杂度。
+
+如果以后媒体库变大（几万条），或者数据改成从磁盘扫描、网络、数据库读取，就把加载放到后台线程：
+
+- 用 `QtConcurrent::run` 在后台调用 `MediaJsonLoader::load()`，再用 `QFutureWatcher` 在加载完成时通知主线程；也可以用 worker 对象加 `moveToThread`，通过信号把结果发回来
+- 结果回到主线程后，再调用 `MediaLibraryModel::setItems()`。`QAbstractItemModel` 被 ListView 使用，只能在 GUI 线程里修改，后台线程只负责读取和解析，不碰模型
+- 加载期间可以下发一个“加载中”的状态给界面显示
+
+现在的结构已经为此留好了位置：读取（`MediaJsonLoader`）和模型（`MediaLibraryModel`）是分开的，改成异步加载只需要改 `main.cpp` 里加载数据的那一段，模型、逻辑和界面都不用动。
+
 **其他**：播放、收藏和文件夹、数据持久化、在线数据源，这一版刻意不做，控制范围，专注题目要求。

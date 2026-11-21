@@ -1,6 +1,4 @@
-// 语言切换：EN | SV 分段按钮。
-// 下发：选项来自 LanguageData.toUiAvailableLanguages，当前语言 LanguageData.toUiLanguage 高亮（橙色）。
-// 上发：点击后 UiEvents.post(FromUi.LanguageSelected, 语言代码)，C++ 的 LanguageManager 加载翻译并刷新界面。
+// EN | SV language buttons. The current language is highlighted.
 import QtQuick
 import QtQuick.Controls
 import MediaLibrary
@@ -21,7 +19,7 @@ Rectangle {
         anchors.centerIn: parent
         spacing: Theme.dp(2)
 
-        // 每种语言一个按钮。modelData 是 C++ 下发的 {code, label}
+        // modelData is {code, label}
         Repeater {
             model: LanguageData.toUiAvailableLanguages
 
@@ -35,7 +33,6 @@ Rectangle {
                 implicitHeight: Theme.dp(28)
                 focusPolicy: Qt.NoFocus
 
-                // 上发：只报告“用户选了哪种语言”，翻译加载和界面刷新都在 C++ 里
                 onClicked: UiEvents.post(FromUi.LanguageSelected, modelData.code)
 
                 contentItem: Text {
@@ -47,7 +44,6 @@ Rectangle {
                     color: button.current ? Theme.background : Theme.textSecondary
                 }
 
-                // 当前语言：橙色底；鼠标悬停：稍亮的底
                 background: Rectangle {
                     radius: Theme.dp(6)
                     color: button.current ? Theme.accent

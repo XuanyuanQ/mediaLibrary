@@ -1,5 +1,5 @@
-// 主窗口：只做横屏，内容就是 WideLayout（左列表 + 右详情）。
-// 不保存任何业务状态（搜索、筛选、选中都在 C++ 里，QML 通过 LibraryData 单例读取）。
+// Main window: landscape only, list on the left, details on the right.
+// No app state here: it lives in C++ and is read through LibraryData.
 import QtQuick
 import QtQuick.Controls
 import MediaLibrary
@@ -9,7 +9,7 @@ ApplicationWindow {
 
     width: 1280
     height: 720
-    minimumWidth: 900      // 再窄左右两栏就挤不下了
+    minimumWidth: 900      // narrower does not fit two columns
     minimumHeight: 480
     visible: true
     title: qsTr("Media Library")

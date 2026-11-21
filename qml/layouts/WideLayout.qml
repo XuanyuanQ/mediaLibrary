@@ -1,4 +1,4 @@
-// 宽屏布局（车机横屏、桌面）：左列表（约 42%）+ 右详情
+// List (42%) on the left, details on the right
 import QtQuick
 import QtQuick.Layouts
 import MediaLibrary
@@ -13,7 +13,7 @@ RowLayout {
         Layout.preferredWidth: root.width * 0.42
     }
 
-    // 分隔线
+    // Divider
     Rectangle {
         Layout.fillHeight: true
         implicitWidth: 1

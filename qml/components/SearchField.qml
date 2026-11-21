@@ -1,5 +1,4 @@
-// 搜索框：输入内容通过 UiEvents.post(FromUi.SearchEdited) 上发给 C++（防抖和过滤都在 C++ 里），
-// 右侧有清除按钮
+// Search box. Text goes to C++ (debounce and filtering happen there).
 import QtQuick
 import QtQuick.Controls
 import MediaLibrary
@@ -8,14 +7,9 @@ import MediaLibrary.Core
 TextField {
     id: root
 
-    // 下发（C++ → 界面）：绑定 LibraryData.toUiSearchText（发往 UI 的搜索词）。
-    // C++ 的 setSearchText() 里调用 m_data.publish(ToUi::SearchText, …) 下发，发出 toUiSearchTextChanged 后，
-    // QML 自动重新取值，搜索框文字随之更新（✕ 按钮清空就是靠这一行）
+    // To UI: shows the text from C++, so clearing in C++ also clears the box
     text: LibraryData.toUiSearchText
-    // 上发（界面 → C++）：用户每打一个字，就发一条 SearchEdited 消息。
-    // C++ 的 LibraryManager::handleUiEvent() 收到后交给 setSearchText()，
-    // 之后的流程都在 C++：200ms 防抖 → 代理重新过滤 → 发出 rowsRemoved 等信号 → 列表更新。
-    // 用 onTextEdited 而不是 onTextChanged：只响应用户输入，避免和上面的绑定互相触发
+    // From UI: onTextEdited fires on user input only, so it does not loop with the binding above
     onTextEdited: UiEvents.post(FromUi.SearchEdited, text)
 
     placeholderText: qsTr("Search title or creator")
@@ -35,11 +29,10 @@ TextField {
         radius: Theme.dp(8)
         color: Theme.surface
         border.width: 1
-        // 获得焦点时边框变成橙色
         border.color: root.activeFocus ? Theme.accent : Theme.border
     }
 
-    // 清除按钮：有内容时才显示
+    // Clear button, shown only when there is text
     ToolButton {
         id: clearButton
         anchors.right: parent.right

@@ -11,14 +11,10 @@ class MediaLibraryModel;
 class MediaFilterModel;
 
 /*
- * 【逻辑层】媒体库页面的界面逻辑（在 MVVM 里相当于 ViewModel）。不对 QML 开放（不注册到 QML）。
+ * Logic of the library page (the ViewModel in MVVM). Not visible to QML.
  *
- * 数据流：
- *   上发：QML → UiEvents.post(FromUi.xxx, 数据) → main.cpp connect → handleUiEvent() → setSearchText / setCategory / select
- *   下发：这里算完结果 → m_data.publish(ToUi::名字, 值) → LibraryData 发出 toUiXxxChanged → QML 绑定刷新
- *
- * 所有“下发”都走统一入口 publish()，名字在 ToUi.h 里集中登记；搜索 "publish(" 就能看到全部下发点。
- * 这个类不引用任何 QML 类型，不启动界面也能单独创建和使用。
+ *   From UI: UiEvents.post(FromUi.xxx) -> handleUiEvent() -> setSearchText / setCategory / select
+ *   To UI:   m_data.publish(ToUi::xxx, value) -> LibraryData -> QML bindings update
  */
 class LibraryManager : public QObject
 {
@@ -27,31 +23,29 @@ class LibraryManager : public QObject
 public:
     explicit LibraryManager(MediaLibraryModel *library, QObject *parent = nullptr);
 
-    // 下发给 QML 的数据。main.cpp 把它注册成单例 LibraryData
+    // Registered as the QML singleton LibraryData in main.cpp
     LibraryData *data() { return &m_data; }
 
-    // ---- 处理上发消息 ----
-    // 入口：main.cpp 把 UiEvents::post connect 到这里。只处理媒体库模块（100~199）的消息
+    // Connected to UiEvents::post in main.cpp. Handles library messages only (100-199).
     void handleUiEvent(FromUi::Message type, const QVariant &data);
 
-    // 具体处理函数（由 handleUiEvent 分发）
-    void setSearchText(const QString &text);   // ← FromUi::SearchEdited
-    void setCategory(const QString &category); // ← FromUi::TypeSelected
-    void select(int mediaId);                  // ← FromUi::ItemClicked
+    void setSearchText(const QString &text);   // FromUi::SearchEdited
+    void setCategory(const QString &category); // FromUi::TypeSelected
+    void select(int mediaId);                  // FromUi::ItemClicked
 
 public slots:
-    // 语言切换后由 main.cpp 连接的信号触发：重新下发带翻译的文字（categories、selectedItem）
+    // Called after a language change: re-publish translated texts
     void retranslate();
 
 private:
-    void applySearch();             // 防抖计时结束后，把搜索词交给过滤模型
-    void publishCounts();           // 下发 resultCount、totalCount、emptyState
-    void publishCategories();       // 下发下拉框选项（带翻译）
-    void publishSelectedItem();     // 下发详情数据（带格式化）
+    void applySearch();             // after the debounce delay
+    void publishCounts();           // resultCount, totalCount, emptyState
+    void publishCategories();       // dropdown options
+    void publishSelectedItem();     // detail texts
     LibraryData::EmptyState computeEmptyState() const;
 
-    MediaLibraryModel *m_library = nullptr;   // 不拥有，由 main.cpp 管理生命周期
-    MediaFilterModel *m_filter = nullptr;     // 拥有（Qt 父子关系自动释放）
-    LibraryData m_data;                       // 下发数据（QML 只读它）
+    MediaLibraryModel *m_library = nullptr;   // not owned
+    MediaFilterModel *m_filter = nullptr;     // owned (QObject parent)
+    LibraryData m_data;
     QTimer m_searchDebounce;
 };

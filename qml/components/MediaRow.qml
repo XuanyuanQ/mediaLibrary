@@ -1,4 +1,4 @@
-// 列表中的一行：标题 + 创作者，右侧年份
+// One list row: number, title, creator and year
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
@@ -8,12 +8,10 @@ import MediaLibrary.Core
 ItemDelegate {
     id: root
 
-    // 这一行在列表中的位置（从 0 开始），由 ListView 自动赋值
+    // Set by ListView: row index and role values.
     required property int index
 
-    // 这一行的数据：由 ListView 根据模型 roleNames() 自动赋值。
-    // 名字必须和 C++ roleNames() 里的一致（mediaId、title …），写错会在启动时报
-    // “Required property xxx was not initialized”
+    // Names must match roleNames() in MediaLibraryModel.
     required property int mediaId
     required property string title
     required property string creator
@@ -34,8 +32,7 @@ ItemDelegate {
     contentItem: RowLayout {
         spacing: Theme.dp(12)
 
-        // 序号：index 从 0 开始，所以显示 index + 1。
-        // 固定宽度并右对齐，两位数和一位数的序号也能上下对齐
+        // Row number, right-aligned so one- and two-digit numbers line up
         Label {
             Layout.preferredWidth: Theme.dp(24)
             text: root.index + 1
@@ -52,7 +49,7 @@ ItemDelegate {
             Label {
                 Layout.fillWidth: true
                 text: root.title
-                textFormat: Text.PlainText    // 按纯文本显示，标题里的 "<Code>" 不会被当成标签
+                textFormat: Text.PlainText    // show "<Code>" as text, not markup
                 elide: Text.ElideRight
                 color: Theme.textPrimary
                 font.pixelSize: Theme.sp(15)
@@ -75,7 +72,6 @@ ItemDelegate {
         }
     }
 
-    // 上发：点击后发一条 ItemClicked 消息，C++ 的 LibraryManager::handleUiEvent() 交给 select()
     onClicked: UiEvents.post(FromUi.ItemClicked, root.mediaId)
 
     Accessible.name: root.title + ", " + root.creator
