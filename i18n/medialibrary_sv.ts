@@ -4,7 +4,47 @@
 <context>
     <name>DetailView</name>
     <message>
+        <location filename="../qml/components/DetailView.qml" line="17"/>
+        <source>Movie</source>
+        <translation>Film</translation>
+    </message>
+    <message>
         <location filename="../qml/components/DetailView.qml" line="18"/>
+        <source>Music</source>
+        <translation>Musik</translation>
+    </message>
+    <message>
+        <location filename="../qml/components/DetailView.qml" line="19"/>
+        <source>Book</source>
+        <translation>Bok</translation>
+    </message>
+    <message>
+        <location filename="../qml/components/DetailView.qml" line="20"/>
+        <source>Podcast</source>
+        <translation>Podcast</translation>
+    </message>
+    <message>
+        <location filename="../qml/components/DetailView.qml" line="21"/>
+        <source>Audiobook</source>
+        <translation>Ljudbok</translation>
+    </message>
+    <message>
+        <location filename="../qml/components/DetailView.qml" line="31"/>
+        <source>%1 h %2 min</source>
+        <translation>%1 h %2 min</translation>
+    </message>
+    <message>
+        <location filename="../qml/components/DetailView.qml" line="32"/>
+        <source>%1 min</source>
+        <translation>%1 min</translation>
+    </message>
+    <message>
+        <location filename="../qml/components/DetailView.qml" line="35"/>
+        <source>%1 pages</source>
+        <translation>%1 sidor</translation>
+    </message>
+    <message>
+        <location filename="../qml/components/DetailView.qml" line="42"/>
         <source>Select an item to see its details</source>
         <translation>Välj ett objekt för att se detaljer</translation>
     </message>
@@ -25,75 +65,6 @@
         <location filename="../qml/components/EmptyState.qml" line="24"/>
         <source>%1 of %2 items</source>
         <translation>%1 av %2 objekt</translation>
-    </message>
-</context>
-<context>
-    <name>LibraryManager</name>
-    <message>
-        <location filename="../src/logic/LibraryManager.cpp" line="132"/>
-        <source>All types</source>
-        <translation>Alla typer</translation>
-    </message>
-    <message>
-        <location filename="../src/logic/LibraryManager.cpp" line="133"/>
-        <source>Movies</source>
-        <translation>Filmer</translation>
-    </message>
-    <message>
-        <location filename="../src/logic/LibraryManager.cpp" line="134"/>
-        <location filename="../src/logic/LibraryManager.cpp" line="151"/>
-        <source>Music</source>
-        <translation>Musik</translation>
-    </message>
-    <message>
-        <location filename="../src/logic/LibraryManager.cpp" line="135"/>
-        <source>Books</source>
-        <translation>Böcker</translation>
-    </message>
-    <message>
-        <location filename="../src/logic/LibraryManager.cpp" line="136"/>
-        <source>Podcasts</source>
-        <translation>Poddar</translation>
-    </message>
-    <message>
-        <location filename="../src/logic/LibraryManager.cpp" line="137"/>
-        <source>Others</source>
-        <translation>Övrigt</translation>
-    </message>
-    <message>
-        <location filename="../src/logic/LibraryManager.cpp" line="150"/>
-        <source>Movie</source>
-        <translation>Film</translation>
-    </message>
-    <message>
-        <location filename="../src/logic/LibraryManager.cpp" line="152"/>
-        <source>Book</source>
-        <translation>Bok</translation>
-    </message>
-    <message>
-        <location filename="../src/logic/LibraryManager.cpp" line="153"/>
-        <source>Podcast</source>
-        <translation>Podcast</translation>
-    </message>
-    <message>
-        <location filename="../src/logic/LibraryManager.cpp" line="154"/>
-        <source>Audiobook</source>
-        <translation>Ljudbok</translation>
-    </message>
-    <message>
-        <location filename="../src/logic/LibraryManager.cpp" line="162"/>
-        <source>%1 h %2 min</source>
-        <translation>%1 h %2 min</translation>
-    </message>
-    <message>
-        <location filename="../src/logic/LibraryManager.cpp" line="163"/>
-        <source>%1 min</source>
-        <translation>%1 min</translation>
-    </message>
-    <message>
-        <location filename="../src/logic/LibraryManager.cpp" line="166"/>
-        <source>%1 pages</source>
-        <translation>%1 sidor</translation>
     </message>
 </context>
 <context>
@@ -131,6 +102,39 @@
         <location filename="../qml/components/SearchField.qml" line="51"/>
         <source>Clear search</source>
         <translation>Rensa sökning</translation>
+    </message>
+</context>
+<context>
+    <name>TypeFilter</name>
+    <message>
+        <location filename="../qml/components/TypeFilter.qml" line="15"/>
+        <source>All types</source>
+        <translation>Alla typer</translation>
+    </message>
+    <message>
+        <location filename="../qml/components/TypeFilter.qml" line="16"/>
+        <source>Movies</source>
+        <translation>Filmer</translation>
+    </message>
+    <message>
+        <location filename="../qml/components/TypeFilter.qml" line="17"/>
+        <source>Music</source>
+        <translation>Musik</translation>
+    </message>
+    <message>
+        <location filename="../qml/components/TypeFilter.qml" line="18"/>
+        <source>Books</source>
+        <translation>Böcker</translation>
+    </message>
+    <message>
+        <location filename="../qml/components/TypeFilter.qml" line="19"/>
+        <source>Podcasts</source>
+        <translation>Poddar</translation>
+    </message>
+    <message>
+        <location filename="../qml/components/TypeFilter.qml" line="20"/>
+        <source>Others</source>
+        <translation>Övrigt</translation>
     </message>
 </context>
 </TS>

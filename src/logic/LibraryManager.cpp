@@ -28,7 +28,6 @@ LibraryManager::LibraryManager(MediaLibraryModel *library, QObject *parent)
     connect(m_library, &MediaLibraryModel::countChanged, this, &LibraryManager::publishCounts);
 
     publishCounts();
-    publishCategories();
 }
 
 void LibraryManager::handleUiEvent(FromUi::Message type, const QVariant &data)
@@ -110,66 +109,27 @@ void LibraryManager::select(int mediaId)
     publishSelectedItem();                       // fills the detail view
 }
 
-void LibraryManager::retranslate()
-{
-    publishCategories();
-    publishSelectedItem();
-}
-
 void LibraryManager::applySearch()
 {
     // Row changes trigger publishCounts() through the connections above
     m_filter->setSearchText(m_data.getSearchText());
 }
 
-void LibraryManager::publishCategories()
-{
-    // key goes to the filter (matches the data's type), label is shown in the UI
-    const auto option = [](const QString &key, const QString &label) {
-        return QVariantMap{{QStringLiteral("key"), key}, {QStringLiteral("label"), label}};
-    };
-    m_data.publish(ToUi::Categories, QVariantList{
-        option(QString(), tr("All types")),
-        option(QStringLiteral("Movie"), tr("Movies")),
-        option(QStringLiteral("Music"), tr("Music")),
-        option(QStringLiteral("Ebook"), tr("Books")),
-        option(QStringLiteral("Podcast"), tr("Podcasts")),
-        option(QStringLiteral("Others"), tr("Others")),
-    });
-}
-
 void LibraryManager::publishSelectedItem()
 {
-    // All display texts are prepared here; QML only lays them out.
+    // Data only. Display texts are made and translated in QML (DetailView).
     QVariantMap detail;   // stays empty when nothing is selected
 
     const std::optional<MediaItem> item = m_library ? m_library->itemById(m_data.getSelectedId())
                                                     : std::nullopt;
     if (item) {
-        QString typeLabel = item->type;   // unknown types are shown as-is
-        if (item->type == QLatin1String("Movie"))          typeLabel = tr("Movie");
-        else if (item->type == QLatin1String("Music"))     typeLabel = tr("Music");
-        else if (item->type == QLatin1String("Ebook"))     typeLabel = tr("Book");
-        else if (item->type == QLatin1String("Podcast"))   typeLabel = tr("Podcast");
-        else if (item->type == QLatin1String("Audiobook")) typeLabel = tr("Audiobook");
-
-        // e.g. "2021 · 45 min" or "2019 · 320 pages"
-        QStringList meta;
-        if (item->year > 0)
-            meta << QString::number(item->year);
-        if (item->durationSec > 0) {
-            const int minutes = (item->durationSec + 30) / 60;   // rounded
-            meta << (minutes >= 60 ? tr("%1 h %2 min").arg(minutes / 60).arg(minutes % 60)
-                                   : tr("%1 min").arg(minutes));
-        }
-        if (item->pages > 0)
-            meta << tr("%1 pages").arg(item->pages);
-
         detail = {
             {QStringLiteral("title"), item->title},
             {QStringLiteral("creator"), item->creator},
-            {QStringLiteral("typeLabel"), typeLabel},
-            {QStringLiteral("metaText"), meta.join(QStringLiteral(" · "))},
+            {QStringLiteral("type"), item->type},
+            {QStringLiteral("year"), item->year},
+            {QStringLiteral("durationSec"), item->durationSec},
+            {QStringLiteral("pages"), item->pages},
             {QStringLiteral("description"), item->description},
         };
     }

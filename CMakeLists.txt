@@ -1,4 +1,4 @@
-# Media Library - Qt 6 / QML media library browser. See ARCHITECTURE.md.
+# Media Library - Qt 6 / QML media library browser. See architecture.svg.
 #
 #   mediacore        static library: interface, logic and model (C++)
 #   appMediaLibrary  executable: main.cpp + QML UI
@@ -18,7 +18,7 @@ if(QT_KNOWN_POLICY_QTP0004)
 endif()
 
 # =============================================================================
-# 1. mediacore: C++ code, folders match the layers in ARCHITECTURE.md
+# 1. mediacore: C++ code, folders match the layers in architecture.svg
 # =============================================================================
 qt_add_library(mediacore STATIC
     # Interface: the only C++ QML can see
@@ -92,9 +92,9 @@ set_target_properties(appMediaLibrary PROPERTIES
 
 # Translations: .qm files are built and embedded under :/i18n/.
 # Update .ts files with: cmake --build <build dir> --target update_translations
-# SOURCE_TARGETS also scans tr() in mediacore. English is the source language.
+# All translated texts are qsTr() in QML. English is the source language.
 qt_add_translations(appMediaLibrary
-    SOURCE_TARGETS appMediaLibrary mediacore
+    SOURCE_TARGETS appMediaLibrary
     TS_FILES
         i18n/medialibrary_sv.ts      # Swedish
     RESOURCE_PREFIX /i18n

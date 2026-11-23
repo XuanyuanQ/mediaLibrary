@@ -31,10 +31,6 @@ int main(int argc, char *argv[])
     LibraryManager libraryManager(&library);
     LanguageManager language;
 
-    // Refresh C++ translated texts after a language change
-    QObject::connect(&language, &LanguageManager::languageChanged,
-                     &libraryManager, &LibraryManager::retranslate);
-
     // From UI: one connection per module; each module ignores other modules' messages
     UiEvents uiEvents;
     QObject::connect(&uiEvents, &UiEvents::post, &libraryManager, &LibraryManager::handleUiEvent); // 100-199

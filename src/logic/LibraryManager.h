@@ -33,15 +33,10 @@ public:
     void setCategory(const QString &category); // FromUi::TypeSelected
     void select(int mediaId);                  // FromUi::ItemClicked
 
-public slots:
-    // Called after a language change: re-publish translated texts
-    void retranslate();
-
 private:
     void applySearch();             // after the debounce delay
     void publishCounts();           // resultCount, totalCount, emptyState
-    void publishCategories();       // dropdown options
-    void publishSelectedItem();     // detail texts
+    void publishSelectedItem();     // fields of the selected item
     LibraryData::EmptyState computeEmptyState() const;
 
     MediaLibraryModel *m_library = nullptr;   // not owned

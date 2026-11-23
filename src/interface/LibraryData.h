@@ -40,7 +40,6 @@ public:
     // Search / filter
     UI_PROPERTY(QString, SearchText)          // search box text
     UI_PROPERTY(QString, Category)            // type key: "" = all, "Others" = non-main types
-    UI_PROPERTY(QVariantList, Categories)     // dropdown options [{key, label}], labels translated
 
     // Counts / empty state
     UI_PROPERTY(int, ResultCount)             // rows after filtering
@@ -49,7 +48,7 @@ public:
 
     // Selection / details
     UI_PROPERTY(int, SelectedId)              // item ID (not row index, which changes when filtering)
-    UI_PROPERTY(QVariantMap, SelectedItem)    // {title, creator, typeLabel, metaText, description}, empty if none
+    UI_PROPERTY(QVariantMap, SelectedItem)    // {title, creator, type, year, durationSec, pages, description}, empty if none
 
 private:
     QAbstractItemModel *m_items = nullptr;   // not owned

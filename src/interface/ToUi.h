@@ -17,7 +17,6 @@ enum Message {
     // Library (LibraryManager -> LibraryData)
     SearchText = 100,   // QString
     Category,           // QString
-    Categories,         // QVariantList [{key, label}]
     ResultCount,        // int
     TotalCount,         // int
     EmptyState,         // LibraryData::EmptyState

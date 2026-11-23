@@ -1,0 +1,142 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 690" width="1200" height="690" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="14">
+  <defs>
+    <marker id="up" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#2f6fde"/>
+    </marker>
+    <marker id="down" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#1f9d55"/>
+    </marker>
+    <marker id="call" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#6b7280"/>
+    </marker>
+    <style>
+      .band-label { font-weight: 600; font-size: 14px; fill: #374151; }
+      .band-note { font-size: 12px; fill: #6b7280; }
+      .box { fill: #ffffff; stroke: #8a94a6; stroke-width: 1.2; }
+      .title { font-weight: 600; font-size: 14px; fill: #111827; }
+      .sub { font-size: 12px; fill: #6b7280; }
+      .up { stroke: #2f6fde; stroke-width: 2; fill: none; marker-end: url(#up); }
+      .down { stroke: #1f9d55; stroke-width: 2; fill: none; marker-end: url(#down); }
+      .call { stroke: #6b7280; stroke-width: 1.6; fill: none; marker-end: url(#call); }
+      .up-text { font-size: 12.5px; fill: #2f6fde; }
+      .down-text { font-size: 12.5px; fill: #1f9d55; }
+      .call-text { font-size: 12.5px; fill: #4b5563; }
+    </style>
+  </defs>
+
+  <rect width="1200" height="690" fill="#ffffff"/>
+
+  <!-- Layer backgrounds (drawn first so arrows stay on top) -->
+  <rect x="20" y="56" width="1160" height="110" rx="10" fill="#eef3fb" stroke="#c4d0e4"/>
+  <rect x="20" y="206" width="1160" height="120" rx="10" fill="#fdf6e9" stroke="#e3cf9f"/>
+  <rect x="20" y="376" width="1160" height="110" rx="10" fill="#eff7ef" stroke="#b9d6b9"/>
+  <rect x="20" y="536" width="1160" height="104" rx="10" fill="#f5f2fa" stroke="#d0c4e2"/>
+
+  <!-- Title and legend -->
+  <text x="20" y="36" font-size="20" font-weight="700" fill="#111827">Media Library – Architecture</text>
+  <line x1="700" y1="31" x2="736" y2="31" class="up"/>
+  <text x="744" y="36" class="up-text">From UI</text>
+  <line x1="830" y1="31" x2="866" y2="31" class="down"/>
+  <text x="874" y="36" class="down-text">To UI</text>
+  <line x1="950" y1="31" x2="986" y2="31" class="call"/>
+  <text x="994" y="36" class="call-text">call</text>
+
+  <!-- ============ QML ============ -->
+  <text x="36" y="80" class="band-label">QML UI</text>
+  <text x="96" y="80" class="band-note">qml/</text>
+
+  <rect x="36" y="92" width="172" height="52" rx="6" class="box"/>
+  <text x="122" y="123" text-anchor="middle" class="title">SearchField</text>
+  <rect x="226" y="92" width="172" height="52" rx="6" class="box"/>
+  <text x="312" y="123" text-anchor="middle" class="title">TypeFilter</text>
+  <rect x="416" y="92" width="172" height="52" rx="6" class="box"/>
+  <text x="502" y="123" text-anchor="middle" class="title">MediaList / MediaRow</text>
+  <rect x="606" y="92" width="172" height="52" rx="6" class="box"/>
+  <text x="692" y="123" text-anchor="middle" class="title">EmptyState</text>
+  <rect x="796" y="92" width="172" height="52" rx="6" class="box"/>
+  <text x="882" y="123" text-anchor="middle" class="title">DetailView</text>
+  <rect x="986" y="92" width="178" height="52" rx="6" class="box"/>
+  <text x="1075" y="123" text-anchor="middle" class="title">LanguageSwitch</text>
+
+  <!-- QML -> UiEvents -->
+  <line x1="646" y1="166" x2="646" y2="242" class="up"/>
+  <text x="656" y="196" class="up-text">UiEvents.post(message, data)</text>
+
+  <!-- Data -> QML -->
+  <line x1="440" y1="244" x2="440" y2="168" class="down"/>
+  <text x="430" y="196" text-anchor="end" class="down-text">bindings: LibraryData.toUiXxx</text>
+  <line x1="1100" y1="244" x2="1100" y2="168" class="down"/>
+  <text x="1090" y="196" text-anchor="end" class="down-text">bindings: LanguageData.toUiXxx</text>
+
+  <!-- ============ Interface ============ -->
+  <text x="36" y="230" class="band-label">Interface</text>
+  <text x="112" y="230" class="band-note">src/interface/   the only C++ that QML can see</text>
+
+  <rect x="36" y="244" width="440" height="66" rx="6" class="box"/>
+  <text x="52" y="270" class="title">LibraryData</text>
+  <text x="52" y="292" class="sub">read-only toUiXxx properties: list, search, counts, selection</text>
+
+  <rect x="496" y="244" width="300" height="66" rx="6" class="box"/>
+  <text x="512" y="270" class="title">UiEvents</text>
+  <text x="512" y="292" class="sub">one signal for all UI messages</text>
+
+  <rect x="816" y="244" width="348" height="66" rx="6" class="box"/>
+  <text x="832" y="270" class="title">LanguageData</text>
+  <text x="832" y="292" class="sub">read-only toUiXxx properties: language</text>
+
+  <!-- UiEvents -> managers -->
+  <path d="M590 310 V352 H420 V410" class="up"/>
+  <path d="M702 310 V352 H900 V410" class="up"/>
+  <text x="646" y="392" text-anchor="middle" class="up-text">handleUiEvent(message, data)</text>
+
+  <!-- managers -> data -->
+  <line x1="330" y1="412" x2="330" y2="312" class="down"/>
+  <text x="320" y="356" text-anchor="end" class="down-text">publish(key, value)</text>
+  <line x1="1100" y1="412" x2="1100" y2="312" class="down"/>
+  <text x="1090" y="356" text-anchor="end" class="down-text">publish(key, value)</text>
+
+  <!-- ============ Logic ============ -->
+  <text x="36" y="400" class="band-label">Logic</text>
+  <text x="84" y="400" class="band-note">src/logic/   hidden from QML</text>
+
+  <rect x="36" y="412" width="440" height="58" rx="6" class="box"/>
+  <text x="52" y="436" class="title">LibraryManager</text>
+  <text x="52" y="456" class="sub">search, type filter, select, counts</text>
+
+  <rect x="816" y="412" width="348" height="58" rx="6" class="box"/>
+  <text x="832" y="436" class="title">LanguageManager</text>
+  <text x="832" y="456" class="sub">switches language tables</text>
+
+  <!-- manager -> model -->
+  <line x1="186" y1="470" x2="186" y2="570" class="call"/>
+  <text x="196" y="512" class="call-text">setSearchText / setCategory</text>
+  <line x1="440" y1="470" x2="440" y2="570" class="call"/>
+  <text x="450" y="512" class="call-text">itemById()</text>
+
+  <!-- ============ Model ============ -->
+  <text x="36" y="560" class="band-label">Model</text>
+  <text x="88" y="560" class="band-note">src/model/</text>
+
+  <rect x="36" y="572" width="300" height="56" rx="6" class="box"/>
+  <text x="186" y="596" text-anchor="middle" class="title">MediaFilterModel</text>
+  <text x="186" y="614" text-anchor="middle" class="sub">filtered list shown in QML</text>
+
+  <rect x="376" y="572" width="300" height="56" rx="6" class="box"/>
+  <text x="526" y="596" text-anchor="middle" class="title">MediaLibraryModel</text>
+  <text x="526" y="614" text-anchor="middle" class="sub">all items</text>
+
+  <rect x="716" y="572" width="250" height="56" rx="6" class="box"/>
+  <text x="841" y="596" text-anchor="middle" class="title">MediaJsonLoader</text>
+  <text x="841" y="614" text-anchor="middle" class="sub">reads the data file</text>
+
+  <rect x="1006" y="572" width="158" height="56" rx="6" class="box"/>
+  <text x="1085" y="596" text-anchor="middle" class="title">media.json</text>
+  <text x="1085" y="614" text-anchor="middle" class="sub">mock data</text>
+
+  <line x1="1006" y1="600" x2="968" y2="600" class="call"/>
+  <line x1="716" y1="600" x2="678" y2="600" class="call"/>
+  <line x1="376" y1="600" x2="338" y2="600" class="call"/>
+
+  <!-- main.cpp -->
+  <text x="20" y="668" class="band-note">main.cpp creates all objects, connects UiEvents to each manager, and registers UiEvents, LibraryData and LanguageData as QML singletons.</text>
+</svg>

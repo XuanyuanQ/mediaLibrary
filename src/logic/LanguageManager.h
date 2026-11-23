@@ -1,5 +1,6 @@
 #pragma once
 
+#include <QHash>
 #include <QObject>
 #include <QTranslator>
 #include <QVariantList>
@@ -15,8 +16,10 @@ class QQmlEngine;
  *   From UI: UiEvents.post(FromUi.LanguageSelected, code) -> handleUiEvent() -> setLanguage()
  *   To UI:   m_data.publish(ToUi::Language, code)
  *
- * Steps: remove old translator -> load :/i18n/medialibrary_<code>.qm -> install
- *        -> QQmlEngine::retranslate() -> emit languageChanged
+ * Each language table (:/i18n/medialibrary_<code>.qm) is loaded the first time it is
+ * used and then kept, so later switches only swap tables and do not load again.
+ * Steps: remove current table -> install the new one
+ *        -> QQmlEngine::retranslate() (all translated texts are qsTr() in QML)
  */
 class LanguageManager : public QObject
 {
@@ -36,12 +39,12 @@ public:
 
     void setLanguage(const QString &code);
 
-signals:
-    // Emitted after a switch. main.cpp connects it to LibraryManager::retranslate.
-    void languageChanged();
-
 private:
-    QQmlEngine *m_engine = nullptr;   // not owned
-    QTranslator m_translator;
+    // Loaded table for a language code, loading it on first use. nullptr if missing.
+    QTranslator *translatorFor(const QString &code);
+
+    QQmlEngine *m_engine = nullptr;               // not owned
+    QHash<QString, QTranslator *> m_translators;  // loaded tables, owned (QObject parent)
+    QTranslator *m_current = nullptr;             // installed table, nullptr for English
     LanguageData m_data;
 };

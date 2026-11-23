@@ -9,8 +9,16 @@ ComboBox {
 
     readonly property bool active: LibraryData.toUiCategory !== ""
 
-    // Options [{key, label}]: show label, send key
-    model: LibraryData.toUiCategories
+    // Options: show label, send key. The key matches the data's type ("" = all,
+    // "Others" = types not listed here).
+    model: [
+        { key: "",        label: qsTr("All types") },
+        { key: "Movie",   label: qsTr("Movies") },
+        { key: "Music",   label: qsTr("Music") },
+        { key: "Ebook",   label: qsTr("Books") },
+        { key: "Podcast", label: qsTr("Podcasts") },
+        { key: "Others",  label: qsTr("Others") },
+    ]
     textRole: "label"
     valueRole: "key"
 
@@ -21,12 +29,9 @@ ComboBox {
 
     Component.onCompleted: syncCurrentIndex()
 
-    // After a language change the options are re-sent and ComboBox resets to index 0,
-    // so select the current category again (after ComboBox has handled the new model).
-    Connections {
-        target: LibraryData
-        function onToUiCategoriesChanged() { Qt.callLater(root.syncCurrentIndex) }
-    }
+    // After a language change the labels are re-made, so the model changes and
+    // ComboBox resets to index 0. Select the current category again.
+    onModelChanged: Qt.callLater(syncCurrentIndex)
 
     implicitWidth: Theme.dp(140)
     implicitHeight: Theme.dp(40)

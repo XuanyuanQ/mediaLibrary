@@ -2,7 +2,6 @@
 
 #include <QCoreApplication>
 #include <QDebug>
-#include <QFile>
 #include <QQmlEngine>
 
 LanguageManager::LanguageManager(QObject *parent)
@@ -42,25 +41,40 @@ void LanguageManager::setLanguage(const QString &code)
     if (m_data.getLanguage() == code)
         return;
 
-    // English is the source language and needs no file.
-    // Other .qm files are built by qt_add_translations into :/i18n/.
-    const bool isSource = (code == QLatin1String("en"));
-    const QString qmFile = QStringLiteral(":/i18n/medialibrary_%1.qm").arg(code);
-    if (!isSource && !QFile::exists(qmFile)) {
-        qWarning() << "LanguageManager: no translation file for" << code;
-        return;
+    // English is the source language and needs no table
+    QTranslator *next = nullptr;
+    if (code != QLatin1String("en")) {
+        next = translatorFor(code);
+        if (!next)
+            return;
     }
 
-    QCoreApplication::removeTranslator(&m_translator);
-    if (!isSource && m_translator.load(qmFile))
-        QCoreApplication::installTranslator(&m_translator);
+    // Swap tables (removing only uninstalls it; it stays loaded for next time)
+    if (m_current)
+        QCoreApplication::removeTranslator(m_current);
+    if (next)
+        QCoreApplication::installTranslator(next);
+    m_current = next;
 
     // Re-evaluate every qsTr() in QML
     if (m_engine)
         m_engine->retranslate();
 
     m_data.publish(ToUi::Language, code);
+}
 
-    // Texts built in C++ with tr() are refreshed by LibraryManager::retranslate
-    emit languageChanged();
+QTranslator *LanguageManager::translatorFor(const QString &code)
+{
+    if (QTranslator *loaded = m_translators.value(code))
+        return loaded;
+
+    // First use: load the .qm built by qt_add_translations into :/i18n/
+    auto *translator = new QTranslator(this);
+    if (!translator->load(QStringLiteral(":/i18n/medialibrary_%1.qm").arg(code))) {
+        qWarning() << "LanguageManager: no translation file for" << code;
+        delete translator;
+        return nullptr;
+    }
+    m_translators.insert(code, translator);
+    return translator;
 }
